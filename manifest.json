@@ -1,8 +1,9 @@
 {
+ "id": "/CRM/",
  "name": "Klientų parkai",
  "short_name": "Klientai",
- "start_url": "./",
- "scope": "./",
+ "start_url": "/CRM/",
+ "scope": "/CRM/",
  "display": "standalone",
  "background_color": "#0F1E2D",
  "theme_color": "#0F1E2D",
