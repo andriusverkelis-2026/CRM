@@ -1,0 +1,24 @@
+{
+ "name": "Klientų parkai",
+ "short_name": "Klientai",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#0F1E2D",
+ "theme_color": "#0F1E2D",
+ "lang": "lt",
+ "icons": [
+  {
+   "src": "icon.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icon.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}
