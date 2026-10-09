@@ -609,12 +609,15 @@ tbody tr.done td:first-child{box-shadow:inset 3px 0 0 #1EA65A}
   .masthead{padding:8px 10px 7px;gap:6px}
   .masthead .eyebrow{display:none}
   .masthead h1{font-size:19px}
-  .mast-stats{margin-left:0;width:100%;overflow-x:auto;flex-wrap:nowrap;gap:6px;padding-bottom:2px;
-    -webkit-overflow-scrolling:touch;scrollbar-width:none}
-  .mast-stats::-webkit-scrollbar{display:none}
+  .mast-stats{margin-left:0;width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
   .mast-stat{display:none}
-  .mast-stats .btn{height:34px;padding:0 10px;flex:none;margin-bottom:0!important}
-  .cloudst{height:34px;margin-bottom:0;flex:none}
+  .hide-m{display:none}
+  .mast-stats .btn{height:36px;padding:0 4px;margin-bottom:0!important;font-size:9.5px;letter-spacing:.04em;
+    overflow:hidden;text-overflow:ellipsis;position:relative}
+  .mast-stats .btn .badge{position:absolute;top:-1px;right:-1px;margin:0;font-size:9px}
+  .cloudst{height:36px;margin-bottom:0;padding:0 4px;font-size:10px;overflow:hidden;text-overflow:ellipsis;order:9}
+  .vfilters{display:none!important}
+  .controls.mshow ~ .vfilters:not([hidden]){display:grid!important}
   .controls{padding:7px 10px;gap:7px;overflow:hidden}
   .controls .spacer{display:none}
   .controls .field{flex:1 1 100%}
@@ -648,7 +651,9 @@ tbody tr.done td:first-child{box-shadow:inset 3px 0 0 #1EA65A}
   .pager > span:last-child{display:none}
   .drawer{width:100vw!important;display:block;overflow-y:auto;-webkit-overflow-scrolling:touch}
   .drawer .dbody{overflow:visible}
-  .drawer .dbody.grid{display:block}
+  .drawer .dbody.grid:not([hidden]){display:block}
+  .rel a{flex-wrap:wrap}
+  .rel .nm{flex:1 1 60%}
   .dhead{padding:10px 12px 0;position:relative}
   .dmeta{font-size:12px;gap:2px 10px}
   .dtop{flex-wrap:wrap}
@@ -679,6 +684,27 @@ tbody tr.done td:first-child{box-shadow:inset 3px 0 0 #1EA65A}
   .reqbar{padding:6px 10px;flex-wrap:wrap;gap:6px}
   .warnbar{flex-wrap:wrap}
   .btn{height:36px}
+  /* kreipimosi planas: lentelės -> kortelės */
+  .out-tbl thead{display:none}
+  .out-tbl,.out-tbl tbody{display:block;width:100%}
+  .out-tbl tr{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:11px 4px;border-bottom:1px solid var(--line)}
+  .out-tbl td{display:block;border:0!important;padding:0!important;flex:1 1 100%}
+  .out-tbl td.hd{display:none}
+  .out-tbl td:first-child,.out-tbl td.hd + td{flex:1 1 55%;font-size:15px;font-weight:600}
+  .out-tbl td.num{flex:0 0 auto;color:var(--steel)}
+  .out-tbl select{width:100%}
+  .out-tbl .seg{display:flex;width:100%}
+  .out-tbl .seg button{flex:1;height:38px}
+  .out-tel{display:inline-block;border:1px solid var(--green);color:var(--green);border-radius:3px;
+    padding:9px 12px;margin:3px 4px 3px 0;font-size:15px;text-decoration:none;background:#F1F8F4;color:var(--green)!important}
+  .out-tel.sel{color:#fff!important}
+  .out-tel.sel{background:var(--green);color:#fff}
+  .out-tbl br{display:none}
+  .out-tbl [data-called]{width:100%;height:40px}
+  .out-ch{flex-wrap:wrap;gap:8px}
+  .out-ch a,.out-ch .btn{height:42px;display:inline-flex;align-items:center;justify-content:center;flex:1 1 40%}
+  .out-ch span[style*="flex:1"]{display:none}
+  #out-cfg{display:block;width:100%;font-size:12px}
 }
 </style>
 </head>
@@ -704,7 +730,7 @@ tbody tr.done td:first-child{box-shadow:inset 3px 0 0 #1EA65A}
       Partneriai<span class="badge" id="partners-badge" hidden>0</span></button>
     <button class="btn ghost" id="btn-log" style="margin-bottom:2px">
       Žurnalas<span class="badge" id="log-badge" hidden>0</span></button>
-    <button class="btn ghost" id="btn-hist" style="margin-bottom:2px">Įvykių istorija</button>
+    <button class="btn ghost" id="btn-hist" style="margin-bottom:2px"><span class="hide-m">Įvykių </span>istorija</button>
     <button class="btn ghost" id="btn-cal" style="margin-bottom:2px">Kalendorius</button>
     <button class="btn ghost" id="btn-req" style="margin-bottom:2px">
       Užklausos<span class="badge" id="req-badge" hidden>0</span></button>
@@ -4514,7 +4540,7 @@ function renderCloudBox(){
   box.innerHTML=`<div>☁ <b>Debesis</b> · ${esc(st.email||'be ryšio')}</div>
     <div class="muted">${st.offline?'Dirbama be ryšio – pakeitimai išsiųsti bus vėliau.'
       :(st.ready?('Įrašai sinchronizuojami automatiškai'+(st.pending?' · siunčiama…':'')+(st.last?' · paskutinis gautas '+fmtAgo(st.last):'')):'Jungiamasi…')}</div>
-    ${pm?`<div class="muted">Parko duomenys: ${esc(pm.epoch||'')} · ${nf.format(pm.comp||0)} įmonių · įkelta ${new Date(pm.at).toISOString().slice(0,10)}</div>`:''}
+    ${pm?`<div class="muted">Parko duomenys: ${nf.format(pm.comp||0)} įmonių · įkelta ${new Date(pm.at).toISOString().slice(0,10)}</div>`:''}
     ${C.cloudEmpty?`<div class="hl"><b>Pirmas kartas:</b> debesis dar tuščias. Paspausk <b>„Atidaryti failą“</b> ir pasirink savo
       <b>crm_duomenys.json</b> (Google Drive aplanke) – visi įrašai bus perkelti į debesį, o failas toliau bus pildomas automatiškai.</div>`:''}
     <div class="row">
