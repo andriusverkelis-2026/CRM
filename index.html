@@ -586,6 +586,12 @@ tbody tr.done td:first-child{box-shadow:inset 3px 0 0 #1EA65A}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 /* ---------- debesis ---------- */
+.galcard{position:relative}
+.gdel{position:absolute;top:6px;right:6px;z-index:2;width:30px;height:30px;border:0;border-radius:4px;
+  background:rgba(15,30,45,.75);color:#fff;font-size:15px;cursor:pointer;opacity:0;transition:opacity .15s}
+.galcard:hover .gdel{opacity:1}
+.gdel:hover{background:var(--red)}
+@media (hover:none){ .gdel,.vpacts{opacity:1} .vpbtn{width:32px;height:32px} }
 .badge[hidden]{display:none!important}
 .cloudov{position:fixed;inset:0;z-index:200;background:var(--ink);color:#fff;display:flex;
   align-items:center;justify-content:center;padding:20px}
@@ -3108,6 +3114,7 @@ function photoGrid(list){
   return '<div class="galgrid">'+list.map(p=>{
     const cap=photoCaption(p);
     return `<div class="galcard" data-view="${esc(p.id)}">
+      <button class="gdel" data-gdel="${esc(p.id)}" title="Ištrinti nuotrauką">✕</button>
       <div class="gimg"><img src="${p.img}" alt="" loading="lazy"></div>
       <div class="gm">
         <div class="t">${esc(cap.cname)}</div>
@@ -3137,6 +3144,17 @@ $('#gallerypanel').addEventListener('click',e=>{
   if(fold){ if(fold.dataset.fold==='comp') galNav={cid:fold.dataset.key,date:null};
             else galNav={cid:galNav.cid,date:fold.dataset.key};
             renderGallery(); return; }
+  const gd=e.target.closest('[data-gdel]');
+  if(gd){
+    e.stopPropagation();
+    if(!confirm('Ištrinti šią nuotrauką?')) return;
+    DATA.photos=DATA.photos.filter(x=>x.id!==gd.dataset.gdel);
+    persist(); refreshGalleryBadge();
+    if(galNav.date && !DATA.photos.some(x=>x.cid===galNav.cid && galDayKey(x.at)===galNav.date)) galNav.date=null;
+    if(galNav.cid && !DATA.photos.some(x=>x.cid===galNav.cid)) galNav={cid:null,date:null};
+    renderGallery(); if(cur && $('#drawer').classList.contains('on')) renderCtc();
+    toast('Nuotrauka ištrinta'); return;
+  }
   const v=e.target.closest('[data-view]'); if(v){ openPhoto(v.dataset.view); }
 });
 $('#gal-search').addEventListener('input',e=>{ galQuery=e.target.value; renderGallery(); });
