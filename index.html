@@ -1439,6 +1439,16 @@ C.logout=async function(){
   try{ await fb.auth().signOut(); }catch(e){}
   await kvClear(); location.reload();
 };
+C.getSecret=async function(){
+  if(!db||!uid) return null;
+  try{ const s=await withTimeout(db.doc('u/'+uid+'/s/ai').get(),10000); return s.exists?(s.data().key||null):null; }catch(e){ return null; }
+};
+C.setSecret=async function(v){
+  if(!db||!uid) return false;
+  try{ const r=db.doc('u/'+uid+'/s/ai');
+    if(v) await r.set({key:v,at:Date.now()}); else await r.delete();
+    return true; }catch(e){ return false; }
+};
 C.forgetCfg=function(){ try{ localStorage.removeItem('crm_cloud_cfg'); }catch(e){} location.reload(); };
 
 /* ---------- ekranai ---------- */
@@ -2334,6 +2344,18 @@ function updateLinks(){
 /* ================= parko analizė + AI ================= */
 const AI_MODEL='claude-sonnet-5-5';
 const AI_KEY_STORE='crm_ai_key';
+// AI raktas: šiame įrenginyje + (debesies režime) tavo Firebase, kad nereiktų vesti kiekviename įrenginyje
+function aiKeyToCloud(v){ if(window.CLOUD && window.CLOUD.on && window.CLOUD.setSecret) window.CLOUD.setSecret(v); }
+async function aiKeyFromCloud(){
+  if(!(window.CLOUD && window.CLOUD.on && window.CLOUD.getSecret)) return;
+  let have=null; try{ have=localStorage.getItem(AI_KEY_STORE); }catch(e){}
+  const k=await window.CLOUD.getSecret();
+  if(k && k!==have){
+    try{ localStorage.setItem(AI_KEY_STORE,k); }catch(e){}
+    const o=document.getElementById('ai-q-out'); if(o && /sk-ant/.test(o.innerHTML)) o.innerHTML='';
+    if(typeof cur!=='undefined' && cur && $('#drawer').classList.contains('on') && !editing) renderCtc();
+  } else if(!k && have){ aiKeyToCloud(have); }   // raktas yra tik čia – nukeliam į debesį
+}
 const RUS_LBL=['Sunkvežimiai','Puspriekabės','Priekabos','Autobusai','Kita'];
 const EPOCH_MS=Date.UTC(1950,0,1);
 function fleetStats(r){
@@ -2919,7 +2941,7 @@ $('#aibar').addEventListener('click',e=>{
   const ks=e.target.closest('[data-aikeysave]');
   if(ks){ const v=($('#'+ks.dataset.aikeysave).value||'').trim();
     if(!/^sk-ant-/.test(v)){ toast('Raktas turi prasidėti „sk-ant-“'); return; }
-    localStorage.setItem(AI_KEY_STORE,v); toast('AI raktas išsaugotas'); $('#ai-q-out').innerHTML=''; aiSearch(); }
+    localStorage.setItem(AI_KEY_STORE,v); aiKeyToCloud(v); toast('AI raktas išsaugotas'); $('#ai-q-out').innerHTML=''; aiSearch(); }
 });
 
 
@@ -4063,9 +4085,9 @@ $('#d-ctc').addEventListener('click',e=>{
   if(e.target.closest('#ai-key-save')){
     const v=($('#ai-key-in').value||'').trim();
     if(!/^sk-ant-/.test(v)){ toast('Raktas turi prasidėti „sk-ant-“'); return; }
-    localStorage.setItem(AI_KEY_STORE,v); renderCtc(); toast('AI raktas išsaugotas'); return; }
+    localStorage.setItem(AI_KEY_STORE,v); aiKeyToCloud(v); renderCtc(); toast('AI raktas išsaugotas'); return; }
   if(e.target.closest('#ai-key-change')){ e.preventDefault();
-    if(confirm('Pašalinti išsaugotą AI raktą ir įvesti naują?')){ localStorage.removeItem(AI_KEY_STORE); renderCtc(); }
+    if(confirm('Pašalinti išsaugotą AI raktą ir įvesti naują?')){ localStorage.removeItem(AI_KEY_STORE); aiKeyToCloud(null); renderCtc(); }
     return; }
   const vph=e.target.closest('[data-view]');
   if(vph){ openPhoto(vph.dataset.view); return; }
@@ -4607,7 +4629,8 @@ if(CLOUD_ON){
   window.CLOUD.warn=t=>toast(t);
   window.cloudStatusChanged=()=>{ renderCloudStatus(); if(!$('#panel').hidden) renderCloudBox(); };
   window.cloudReady=()=>{
-    window.CLOUD.flushNow(DATA);   // tai, kas pakeista be ryšio
+    window.CLOUD.flushNow(DATA);
+    aiKeyFromCloud();   // tai, kas pakeista be ryšio
     renderCloudStatus(); renderCloudBox();
     if(window.CLOUD.cloudEmpty && !isPhone()){ $('#panel').hidden=false; refreshPanel(); }
   };
