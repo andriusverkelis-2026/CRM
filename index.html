@@ -263,6 +263,8 @@ td.hit .mg{font-size:10.5px;font-weight:400;font-family:var(--mono)}
 .ainote-p{font-size:12px;color:var(--steel)}
 .ainote-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:8px;margin-top:8px}
 .ainote{background:#fff;border:1px solid var(--line-2);border-radius:3px;padding:8px 10px}
+.ainote-n{border-top:1px dashed var(--line-2);padding-top:5px;margin-top:5px}.ainote-n:first-of-type{border-top:0}
+.ainote-n .ndd{margin-left:0}
 .aich-note{font-size:12px}
 .aichip.co{background:#E7F2F3;border-color:#9CC7CB;color:#1F5F66}
 .aiq-close{flex:none;border:1px solid var(--line);background:#fff;border-radius:3px;padding:5px 10px;cursor:pointer;
@@ -3074,15 +3076,22 @@ function aiNotesHTML(){
   if(!P) return '';
   const lab=[P.t==='perka'?'kas perka / ieško':P.t==='parduoda'?'kas parduoda':'', P.make, P.y1?(P.y2&&P.y2!==P.y1?P.y1+'–'+P.y2:P.y1)+' m.':''].filter(Boolean).join(' ');
   const pend=needPending().length;
-  const card=(cid,head,text,at)=>{ const r=byId[cid], tels=r?telList(r):[];
-    return `<div class="ainote"><div class="ndh"><b class="ndn" data-open="${esc(cid)}">${esc(nameOf(cid))}</b>${r&&r._manual?'<span class="ndg">partneris</span>':''}
-      <span class="ndd${Date.now()-at>240*864e5?' old':''}">${fmtD(at)}</span></div>
-      ${head?`<div class="ndl">${head}</div>`:''}<div class="ndt">${esc(text)}</div>
-      <div class="tdacts">${tels.slice(0,2).map(x=>`<a class="tel" href="tel:${esc(x.t.replace(/\s/g,''))}">📞 ${esc(x.t)}</a>`).join('')}<button data-open="${esc(cid)}">Kortelė</button></div></div>`; };
-  const n=list.length+raw.length;
-  return `<details class="ainotes"${n?' open':''}><summary>📝 Iš tavo pastabų – ${esc(lab)}: <b>${n}</b>${pend?` <span class="ainote-p">(${pend} pastabų AI dar neperskaitė – <a href="#" id="ai-notes-run">analizuoti</a>)</span>`:''}</summary>
-    ${n?'<div class="ainote-grid">'+list.map(it=>card(it.cid,`<span class="sigc ${it.t}">${it.t==='perka'?'Perka':'Parduoda'}</span> ${esc(itemLabel(it).replace(/^(Perka|Parduoda) · /,''))}`,it.text,it.at)).join('')+
-      raw.map(x=>card(x.cid,'<span class="sigw">AI dar neperskaitė – rasta pagal tekstą</span>',x.text,x.at)).join('')+'</div>'
+  // viena kortelė įmonei: visos jos pastabos (naujausia viršuje), vienos pastabos žymos kartu
+  const byC=new Map();
+  const add=(cid,key,at,text,lab)=>{ if(!byC.has(cid)) byC.set(cid,new Map()); const m=byC.get(cid);
+    if(!m.has(key)) m.set(key,{at,text,labs:[]}); if(lab) m.get(key).labs.push(lab); };
+  list.forEach(it=>add(it.cid,it.src+it.o.id,it.at,it.text,`<span class="sigc ${it.t}">${it.t==='perka'?'Perka':'Parduoda'}</span> ${esc(itemLabel(it).replace(/^(Perka|Parduoda) · /,''))}`));
+  raw.forEach(x=>add(x.cid,x.src+x.o.id,x.at,x.text,'<span class="sigw">AI dar neperskaitė – rasta pagal tekstą</span>'));
+  const comps=[...byC.entries()].map(([cid,m])=>({cid,notes:[...m.values()].sort((a,b)=>b.at-a.at)})).sort((a,b)=>b.notes[0].at-a.notes[0].at);
+  const card=c=>{ const r=byId[c.cid], tels=r?telList(r):[];
+    return `<div class="ainote"><div class="ndh"><b class="ndn" data-open="${esc(c.cid)}">${esc(nameOf(c.cid))}</b>${r&&r._manual?'<span class="ndg">partneris</span>':''}
+      ${c.notes.length>1?`<span class="ndg">${c.notes.length} pastabos</span>`:''}</div>
+      ${c.notes.map(n=>`<div class="ainote-n"><span class="ndd${Date.now()-n.at>240*864e5?' old':''}">${fmtD(n.at)}</span>
+        ${n.labs.map(l=>`<div class="ndl">${l}</div>`).join('')}<div class="ndt">${esc(n.text)}</div></div>`).join('')}
+      <div class="tdacts">${tels.slice(0,2).map(x=>`<a class="tel" href="tel:${esc(x.t.replace(/\s/g,''))}">📞 ${esc(x.t)}</a>`).join('')}<button data-open="${esc(c.cid)}">Kortelė</button></div></div>`; };
+  const n=comps.length;
+  return `<details class="ainotes"${n?' open':''}><summary>📝 Iš tavo pastabų – ${esc(lab)}: <b>${n}</b> ${n===1?'įmonė':'įmonės'}${pend?` <span class="ainote-p">(${pend} pastabų AI dar neperskaitė – <a href="#" id="ai-notes-run">analizuoti</a>)</span>`:''}</summary>
+    ${n?'<div class="ainote-grid">'+comps.map(card).join('')+'</div>'
       :'<div class="tdempty" style="padding:4px 0 8px">Pastabose apie tai nieko nerasta.</div>'}</details>`;
 }
 function aiChartHTML(){
@@ -5531,13 +5540,13 @@ function needPairs(items){
   return out.sort((x,y)=>y.sc-x.sc||y.at-x.at);
 }
 function nameOf(cid){ const r=byId[cid]; return r?r[1]:cid; }
-function needCard(it){
+function needCard(it,group){
+  const labs=(group||[it]);
   const r=byId[it.cid], tels=r?telList(r):[], old=Date.now()-it.at>240*864e5;
   return `<div class="ndit${it.stale?' st':''}">
-    <div class="ndh"><span class="sigc ${it.t}">${it.t==='perka'?'Perka':'Parduoda'}</span>
-      <b class="ndn" data-ndopen="${esc(it.cid)}">${esc(nameOf(it.cid))}</b>${r&&r._manual?'<span class="ndg">partneris</span>':''}
+    <div class="ndh"><b class="ndn" data-ndopen="${esc(it.cid)}">${esc(nameOf(it.cid))}</b>${r&&r._manual?'<span class="ndg">partneris</span>':''}
       <span class="ndd${old?' old':''}">${fmtD(it.at)}${old?' · gali būti neaktualu':''}</span></div>
-    <div class="ndl">${esc(itemLabel(it))}</div>
+    ${labs.map(x=>`<div class="ndl"><span class="sigc ${x.t}">${x.t==='perka'?'Perka':'Parduoda'}</span> ${esc(itemLabel(x).replace(/^(Perka|Parduoda) · /,''))}</div>`).join('')}
     <div class="ndt">${esc(it.text)}</div>
     <div class="tdacts">${tels.slice(0,2).map(x=>`<a class="tel" href="tel:${esc(x.t.replace(/\s/g,''))}">📞 ${esc(x.t)}</a>`).join('')}
       ${tels.length&&isMobile(waDigits(tels[0].t))?`<a class="wa" href="https://wa.me/${waDigits(tels[0].t)}" target="_blank" rel="noopener">WhatsApp</a>`:''}
@@ -5566,7 +5575,9 @@ function renderNeeds(){
     const P=q?parseNeedQuery(q):null;
     const list=P?items.filter(it=>needMatchesQuery(it,P)):items;
     if(P) h+=`<div class="ndq">Suprasta: ${[P.t?(P.t==='perka'?'kas perka / ieško':'kas parduoda'):'perka ir parduoda',P.make,P.y1?(P.y2!==P.y1?P.y1+'–'+P.y2:P.y1)+' m.':'',P.words.join(' ')].filter(Boolean).map(esc).join(' · ')}</div>`;
-    h+=list.length?list.slice(0,300).map(needCard).join(''):'<div class="tdempty">Pagal paiešką pastabose nieko nerasta.</div>';
+    const seenN=new Map(); list.forEach(it=>{ const k=it.src+it.o.id; if(!seenN.has(k)) seenN.set(k,[]); seenN.get(k).push(it); });
+    const groups=[...seenN.values()];
+    h+=groups.length?groups.slice(0,300).map(g=>needCard(g[0],g)).join(''):'<div class="tdempty">Pagal paiešką pastabose nieko nerasta.</div>';
     // galimi pardavėjai pagal parką
     if(P && P.make && P.t!=='perka'){
       const mk=P.make.toLowerCase().replace('mercedes-benz','mercedes'), have=new Set(list.map(x=>x.cid)), cnt=[];
