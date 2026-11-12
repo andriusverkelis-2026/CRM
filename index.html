@@ -258,6 +258,12 @@ td.hit .mg{font-size:10.5px;font-weight:400;font-family:var(--mono)}
 .aichip{font-size:11.5px;background:var(--amber-bg);color:var(--amber-dk);border:1px solid var(--line);border-radius:2px;padding:2px 7px}
 .aiq-acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .aiq-top{display:flex;gap:12px;align-items:flex-start}
+.ainotes{margin:10px 0;border:1px solid #CFE0D6;background:#F4FAF6;border-radius:4px;padding:8px 10px}
+.ainotes > summary{cursor:pointer;font-size:13px}
+.ainote-p{font-size:12px;color:var(--steel)}
+.ainote-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:8px;margin-top:8px}
+.ainote{background:#fff;border:1px solid var(--line-2);border-radius:3px;padding:8px 10px}
+.aich-note{font-size:12px}
 .aichip.co{background:#E7F2F3;border-color:#9CC7CB;color:#1F5F66}
 .aiq-close{flex:none;border:1px solid var(--line);background:#fff;border-radius:3px;padding:5px 10px;cursor:pointer;
   font-size:12px;color:var(--ink);font-family:var(--body)}
@@ -2426,7 +2432,7 @@ function draw(){
     const ed=isEdited(r), dn=wasContacted(r[0]);
     return `<tr data-id="${esc(r[0])}" class="${dn?'done':(ed?'edited':(r[HAS]?'has':''))}">
       <td class="id">${esc(r[0])}</td>
-      <td class="name">${r[HAS]?`<span class="dot${ed?' ed':''}"></span>`:''}${esc(r[1])}${chgCur?chgBadge(r,chgCur):''}</td>
+      <td class="name">${r[HAS]?`<span class="dot${ed?' ed':''}"></span>`:''}${esc(r[1])}${chgCur?chgBadge(r,chgCur):''}${aiQLast&&AI_NOTE_CIDS.has(r[0])?' <span title="Yra tavo pastaba apie tai">📝</span>':''}</td>
       <td>${esc(val(r,'sav'))||'<span class="none">–</span>'}</td>
       <td class="small hide-s">${esc(val(r,'adr'))||'<span class="none">–</span>'}</td>
       ${num(r[13])}${num(r[14])}${num(r[15])}
@@ -3021,6 +3027,7 @@ function renderAIQ(insight){
         ${MULTI?'':'<a href="#" id="ai-q-tune">Koreguoti filtrus</a>'}
       </span>
     </div>
+    ${aiNotesHTML()}
     ${aiQHidden?'':`<div class="aiq-grid${aiQInsight?' two':''}">${aiChartHTML()}${aiQInsight?`<div class="aiq-ins">${aiQInsight}</div>`:''}</div>`}
   </div>`;
 }
@@ -3030,6 +3037,53 @@ function fleetMix(r){
   if(r[17]) p.push(nf.format(r[17])+' '+plural(r[17],'puspriekabė','puspriekabės','puspriekabių'));
   if(r[18]) p.push(nf.format(r[18])+' '+plural(r[18],'priekaba','priekabos','priekabų'));
   return p.join(' / ');
+}
+/* ---- AI paieška + tavo pastabos: kas sakė, kad parduoda / perka ---- */
+var AI_NOTE_CIDS=new Set();
+function aiNoteQuery(){
+  if(!aiQLast) return null;
+  const P=parseNeedQuery(aiQLast.q||'');
+  const it=(aiQLast.f&&Array.isArray(aiQLast.f.paieskos)&&aiQLast.f.paieskos[0])||aiQLast.f||{};
+  if(!P.make && it.marke) P.make=canonMake(it.marke);
+  if(!P.y1 && (it.y1||it.y2)){ P.y1=+it.y1||+it.y2; P.y2=+it.y2||+it.y1; }
+  P.words=[];                                  // modelį ir kitus žodžius tikrina parko filtrai
+  if(!P.make && !P.t) return null;
+  return P;
+}
+function aiNoteHits(){
+  const P=aiNoteQuery(); if(!P) return {P:null,list:[],raw:[]};
+  const list=needItems(false).filter(it=>needMatchesQuery(it,P));
+  // dar neperskaitytos AI pastabos – paprasta teksto paieška pagal markę
+  const seen=new Set(list.map(x=>x.src+x.o.id)), raw=[];
+  if(P.make){
+    const al=P.make==='Mercedes-Benz'?['mercedes','mb ','mb,','benz']:[P.make.toLowerCase()];
+    needSources().forEach(x=>{
+      if(seen.has(x.src+x.o.id) || (x.o.sig && x.o.sig.h===hashS(x.text)) || x.o.stale) return;
+      const t=' '+x.text.toLowerCase()+' ';
+      if(!al.some(a=>t.includes(a))) return;
+      if(P.t==='parduoda' && !/parduo|pardav/.test(t)) return;
+      if(P.t==='perka' && !/perk|iešk|iesk|reik/.test(t)) return;
+      raw.push(x);
+    });
+  }
+  return {P,list,raw};
+}
+function aiNotesHTML(){
+  const {P,list,raw}=aiNoteHits();
+  AI_NOTE_CIDS=new Set([...list.map(x=>x.cid),...raw.map(x=>x.cid)]);
+  if(!P) return '';
+  const lab=[P.t==='perka'?'kas perka / ieško':P.t==='parduoda'?'kas parduoda':'', P.make, P.y1?(P.y2&&P.y2!==P.y1?P.y1+'–'+P.y2:P.y1)+' m.':''].filter(Boolean).join(' ');
+  const pend=needPending().length;
+  const card=(cid,head,text,at)=>{ const r=byId[cid], tels=r?telList(r):[];
+    return `<div class="ainote"><div class="ndh"><b class="ndn" data-open="${esc(cid)}">${esc(nameOf(cid))}</b>${r&&r._manual?'<span class="ndg">partneris</span>':''}
+      <span class="ndd${Date.now()-at>240*864e5?' old':''}">${fmtD(at)}</span></div>
+      ${head?`<div class="ndl">${head}</div>`:''}<div class="ndt">${esc(text)}</div>
+      <div class="tdacts">${tels.slice(0,2).map(x=>`<a class="tel" href="tel:${esc(x.t.replace(/\s/g,''))}">📞 ${esc(x.t)}</a>`).join('')}<button data-open="${esc(cid)}">Kortelė</button></div></div>`; };
+  const n=list.length+raw.length;
+  return `<details class="ainotes"${n?' open':''}><summary>📝 Iš tavo pastabų – ${esc(lab)}: <b>${n}</b>${pend?` <span class="ainote-p">(${pend} pastabų AI dar neperskaitė – <a href="#" id="ai-notes-run">analizuoti</a>)</span>`:''}</summary>
+    ${n?'<div class="ainote-grid">'+list.map(it=>card(it.cid,`<span class="sigc ${it.t}">${it.t==='perka'?'Perka':'Parduoda'}</span> ${esc(itemLabel(it).replace(/^(Perka|Parduoda) · /,''))}`,it.text,it.at)).join('')+
+      raw.map(x=>card(x.cid,'<span class="sigw">AI dar neperskaitė – rasta pagal tekstą</span>',x.text,x.at)).join('')+'</div>'
+      :'<div class="tdempty" style="padding:4px 0 8px">Pastabose apie tai nieko nerasta.</div>'}</details>`;
 }
 function aiChartHTML(){
   if(!vActive && CO_COND){
@@ -3051,7 +3105,7 @@ function aiChartHTML(){
     ${legend}<div class="aichart-list">
     ${list.map((r,k)=>`<div class="aich-row" data-open="${esc(r[0])}" title="Atidaryti kortelę">
       <span class="aich-k">${k+1}</span>
-      <span class="aich-nm">${MULTI&&r._ng>=2?'<b class="aich-both" title="Atitinka kelias paieškas">★</b> ':''}${esc(r[1])} <small class="aich-tot">${fleetMix(r)}</small></span>
+      <span class="aich-nm">${MULTI&&r._ng>=2?'<b class="aich-both" title="Atitinka kelias paieškas">★</b> ':''}${AI_NOTE_CIDS.has(r[0])?'<b class="aich-note" title="Yra tavo pastaba apie tai">📝</b> ':''}${esc(r[1])} <small class="aich-tot">${fleetMix(r)}</small></span>
       <span class="aich-bar${MULTI?' multi':''}">${bar(r)}</span>
       <span class="aich-n">${MULTI?multiBreak(r):nf.format(r[HIT])}</span></div>`).join('')}</div></div>`;
 }
@@ -3304,11 +3358,12 @@ $('#ai-q').addEventListener('keydown',e=>{ if(e.key==='Enter') aiSearch(); });
 $('#aibar').addEventListener('click',e=>{
   if(e.target.closest('#ai-q-ins')){ e.preventDefault(); aiInsights(); return; }
   if(e.target.closest('#ai-q-close')){ e.preventDefault(); goHome(); return; }
+  if(e.target.closest('#ai-notes-run')){ e.preventDefault(); needsExtract(false).then(()=>{ if(aiQLast) renderAIQ(); }); return; }
   if(e.target.closest('#ai-q-tune')){ e.preventDefault(); const p=$('#vfilters'); p.hidden=false; $('#toggle-vf').classList.add('on'); refreshModels(); p.scrollIntoView({behavior:'smooth',block:'nearest'}); return; }
   if(e.target.closest('#ai-q-hide')){ e.preventDefault(); aiQHidden=!aiQHidden; renderAIQ(); return; }
   if(e.target.closest('#ai-q-req')){ aiSaveAsRequest(); return; }
   if(e.target.closest('#ai-q-out-go')){ openOutreach(); return; }
-  const op=e.target.closest('.aich-row[data-open]'); if(op){ openCard(op.dataset.open); return; }
+  const op=e.target.closest('.aich-row[data-open], .ainote [data-open]'); if(op){ openCard(op.dataset.open); return; }
   const ks=e.target.closest('[data-aikeysave]');
   if(ks){ const v=($('#'+ks.dataset.aikeysave).value||'').trim();
     if(!/^sk-ant-/.test(v)){ toast('Raktas turi prasidėti „sk-ant-“'); return; }
