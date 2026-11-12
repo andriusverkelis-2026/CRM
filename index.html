@@ -283,6 +283,9 @@ td.hit .mg{font-size:10.5px;font-weight:400;font-family:var(--mono)}
 .tpprev{font-size:12px;color:#5C6975;margin-top:3px;white-space:pre-wrap;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
 .tpacts{display:flex;gap:6px;align-items:center}
 .tphint{font-size:11px;color:var(--steel-2);margin-top:8px;line-height:1.5}
+.tptr{border-top:1px dashed var(--line);margin-top:6px;cursor:default}
+.tptrl{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:3px 8px;font-size:12px;margin-bottom:6px}
+.tptrl label{display:flex;gap:5px;align-items:center;cursor:pointer}
 @media (max-width:900px){ .out-msgwrap{grid-template-columns:1fr} }
 .ainotes{margin:10px 0;border:1px solid #CFE0D6;background:#F4FAF6;border-radius:4px;padding:8px 10px}
 .ainotes > summary{cursor:pointer;font-size:13px}
@@ -3333,7 +3336,7 @@ function renderOut(){
         ${mobs.length?`<label class="out-lab">Gavėjas
           <select id="out-to">${mobs.map((t,i)=>`<option value="${i}"${t.d===outWho(r)?' selected':''}>${esc(t.lab)}</option>`).join('')}</select></label>
         <label class="out-lab">Žinutė (gali pataisyti)
-          <textarea id="out-txt" rows="6">${esc(txt)}</textarea></label>
+          <textarea id="out-txt" rows="6" dir="auto">${esc(txt)}</textarea></label>
         <div class="ch out-ch">
           <a class="wa" id="out-wa" href="#" target="_blank" rel="noopener">WhatsApp</a>
           <a class="vb" id="out-sms" href="#" style="background:var(--ink-3)">SMS</a>
@@ -3353,7 +3356,23 @@ function renderOut(){
 }
 function outQueue(){ return outRows().filter(r=>outChoice(r)==='msg'&&!outDone(r)); }
 /* ---- žinučių šablonai: bendras komponentas (pirkimo kampanijos ir prisistatymas) ---- */
-const TPL_LANGS=[['lt','LT'],['en','EN'],['ru','RU'],['pl','PL'],['de','DE'],['lv','LV']];
+const TPL_LANGS=[['lt','LT'],['en','EN'],['ru','RU'],['pl','PL'],['lv','LV'],['et','ET'],['de','DE'],['fr','FR'],['es','ES'],['it','IT'],['nl','NL'],['ro','RO'],['uk','UK'],['tr','TR'],['ar','AR'],['fa','FA'],['kk','KK'],['uz','UZ'],['az','AZ'],['ka','KA']];
+const LANG_NAME={lt:'lietuvių',en:'anglų',ru:'rusų',pl:'lenkų',lv:'latvių',et:'estų',de:'vokiečių',fr:'prancūzų',es:'ispanų',it:'italų',nl:'olandų',ro:'rumunų',uk:'ukrainiečių',tr:'turkų',ar:'arabų',fa:'persų (farsi)',kk:'kazachų',uz:'uzbekų',az:'azerbaidžaniečių',ka:'gruzinų'};
+const LANG_EN={lt:'Lithuanian',en:'English',ru:'Russian',pl:'Polish',lv:'Latvian',et:'Estonian',de:'German',fr:'French',es:'Spanish',it:'Italian',nl:'Dutch',ro:'Romanian',uk:'Ukrainian',tr:'Turkish',ar:'Arabic',fa:'Persian (Farsi)',kk:'Kazakh',uz:'Uzbek',az:'Azerbaijani',ka:'Georgian'};
+const TPL_TR={};
+async function aiTranslate(text,langs,what){
+  const key=localStorage.getItem(AI_KEY_STORE); if(!key) throw new Error('reikia AI rakto (nustatomas ten pat, kur AI paieškai)');
+  const prompt=`Translate this ${what||'business message of a commercial truck and trailer trader'} into: ${langs.map(l=>LANG_EN[l]+' ('+l+')').join(', ')}.
+Keep the meaning, tone and line breaks; it must sound natural and polite to a native business reader.
+Do NOT translate or change placeholders in curly braces like {asmuo}, {, asmuo}, {imone}, {ko_ieskoma}, {tp}, {mano_vardas}, {mano_imone}, {mano_tel} – copy them exactly as they are.
+Return ONLY a JSON object: {"<language code>":"<translation>", ...}.
+Text:
+${text}`;
+  const data=await aiCall(key,{model:AI_MODEL,max_tokens:8000,messages:[{role:'user',content:prompt}]});
+  const t=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+  const m=t.match(/\{[\s\S]*\}/); if(!m) throw new Error('AI negrąžino vertimo');
+  return JSON.parse(m[0]);
+}
 const tplsOf=kind=>(DATA.msgtpl||[]).filter(t=>(t.kind||'buy')===kind);
 function seedMsgTpl(){
   DATA.msgtpl=DATA.msgtpl||[];
@@ -3376,17 +3395,22 @@ function tplPanelHTML(kind,h,withSpec){
   const spec=withSpec?((h&&h.specL&&h.specL[L]) || (L==='lt'?(h&&(h.spec||h.title))||'':'')):'';
   const langSel=v=>`<select class="tp-lang">${TPL_LANGS.map(([k,l])=>`<option value="${k}"${k===v?' selected':''}>${l}</option>`).join('')}</select>`;
   const edBox=(t,id)=>`<div class="tpcard ed"><input class="tp-name" value="${esc(t.name||'')}" placeholder="Pavadinimas">${langSel(t.lang||'lt')}
-      <textarea class="tp-text" rows="8" placeholder="Sveiki{, asmuo}, …">${esc(t.text||'')}</textarea>
+      <textarea class="tp-text" rows="8" dir="auto" placeholder="Sveiki{, asmuo}, …">${esc(t.text||'')}</textarea>
       <div class="tpacts"><button class="btn amber" data-tpsave="${esc(id)}" style="height:28px">Išsaugoti</button>
       <button class="btn ghost" data-tpcancel="1" style="height:28px">Atšaukti</button><span style="flex:1"></span>
       ${id!=='new'?`<button class="btn ghost" data-tpdel="${esc(id)}" style="height:28px;color:#B3402C">Ištrinti</button>`:''}</div></div>`;
   const list=tplsOf(kind).map(t=> ed===t.id ? edBox(t,t.id) : `<div class="tpcard${t.id===cur.id?' on':''}" data-tpuse="${esc(t.id)}">
       <div class="tph"><span class="tplang">${esc((t.lang||'lt').toUpperCase())}</span><b>${esc(t.name||'(be pavadinimo)')}</b>
-        <span style="flex:1"></span><button class="sigb" data-tpedit="${esc(t.id)}" title="Redaguoti">✎</button><button class="sigb" data-tpcopy="${esc(t.id)}" title="Kopijuoti">⧉</button></div>
-      <div class="tpprev">${esc(t.text)}</div></div>`).join('');
+        <span style="flex:1"></span><button class="sigb" data-tptr="${esc(t.id)}" title="Išversti į kitas kalbas">🌐</button><button class="sigb" data-tpedit="${esc(t.id)}" title="Redaguoti">✎</button><button class="sigb" data-tpcopy="${esc(t.id)}" title="Kopijuoti">⧉</button></div>
+      <div class="tpprev" dir="auto">${esc(t.text)}</div>
+      ${TPL_TR[kind]===t.id?`<div class="tptr"><div class="tpsec" style="margin-top:6px">Išversti į kalbas (bus sukurti nauji šablonai):</div>
+        <div class="tptrl">${TPL_LANGS.filter(([k])=>k!==(t.lang||'lt')).map(([k,l])=>`<label><input type="checkbox" value="${k}"> ${esc(LANG_NAME[k]||l)}</label>`).join('')}</div>
+        <div class="tpacts"><button class="btn amber" data-tptrgo="${esc(t.id)}" style="height:28px">Versti su AI</button><button class="btn ghost" data-tptrx="1" style="height:28px">Atšaukti</button></div></div>`:''}
+      </div>`).join('');
   return `<div class="out-tpl" data-tpkind="${kind}">
-    ${withSpec?`<div class="tpsec">Ko ieškoma (${esc(L.toUpperCase())}) – įsistato vietoj {ko_ieskoma}</div>
-    <input class="tp-spec" value="${esc(spec)}" placeholder="${L==='en'?'pvz. DAF XF trucks, 2020–2021':L==='ru'?'pvz. тягачи DAF XF 2020–2021 г.':'pvz. DAF XF vilkikų, 2020–2021 m.'}">`:''}
+    ${withSpec?`<div class="tpsec" style="display:flex;align-items:center">Ko ieškoma (${esc(L.toUpperCase())}) – įsistato vietoj {ko_ieskoma}<span style="flex:1"></span>
+      ${L!=='lt'&&h&&(h.spec||h.title)?`<button class="sigb" data-tpspectr="1" title="Išversti iš lietuviško aprašymo">🌐 išversti iš LT</button>`:''}</div>
+    <input class="tp-spec" dir="auto" value="${esc(spec)}" placeholder="${L==='en'?'pvz. DAF XF trucks, 2020–2021':L==='ru'?'pvz. тягачи DAF XF 2020–2021 г.':'pvz. DAF XF vilkikų, 2020–2021 m.'}">`:''}
     <div class="tpsec" style="display:flex;align-items:center">Žinutės šablonas<span style="flex:1"></span>
       <button class="btn ghost" data-tpnew="1" style="height:26px">+ Naujas</button></div>
     <div class="tplist">${ed==='new'?edBox({lang:'lt'},'new'):''}${list}</div>
@@ -3395,6 +3419,27 @@ function tplPanelHTML(kind,h,withSpec){
 }
 function tplPanelClick(e,kind,h,rerender){
   const box=e.target.closest('.out-tpl'); if(!box) return false;
+  if(e.target.closest('.tptr') && !e.target.closest('[data-tptrgo],[data-tptrx]')) return true;
+  const tr=e.target.closest('[data-tptr]'); if(tr){ e.stopPropagation(); TPL_TR[kind]=TPL_TR[kind]===tr.dataset.tptr?null:tr.dataset.tptr; rerender(); return true; }
+  if(e.target.closest('[data-tptrx]')){ TPL_TR[kind]=null; rerender(); return true; }
+  const tg=e.target.closest('[data-tptrgo]');
+  if(tg){ const src=DATA.msgtpl.find(x=>x.id===tg.dataset.tptrgo); if(!src) return true;
+    const langs=[...tg.closest('.tptr').querySelectorAll('input:checked')].map(i=>i.value);
+    if(!langs.length){ toast('Pažymėk bent vieną kalbą'); return true; }
+    tg.disabled=true; tg.textContent='Verčiama… ('+langs.length+')';
+    aiTranslate(src.text,langs).then(res=>{
+      let n=0; const base=String(src.name||'Šablonas').replace(/\s*\([A-Z]{2}\)\s*$/,'');
+      langs.forEach((l,i)=>{ const txt=res[l]; if(!txt) return;
+        DATA.msgtpl.push({id:'mt'+Date.now().toString(36)+i+l, name:base+' ('+l.toUpperCase()+')', lang:l, text:String(txt), kind, upd:Date.now()}); n++; });
+      TPL_TR[kind]=null; persist(); rerender(); toast('Sukurta naujų šablonų: '+n);
+    }).catch(err=>{ toast('Vertimas nepavyko: '+(err.message||err)); tg.disabled=false; tg.textContent='Versti su AI'; });
+    return true; }
+  if(e.target.closest('[data-tpspectr]')){
+    const L=tplCur(kind,h).lang||'lt', b=e.target.closest('[data-tpspectr]'); b.disabled=true; b.textContent='Verčiama…';
+    aiTranslate(h.spec||h.title,[L],'short description of the vehicles a trader wants to buy (keep makes, models, years and numbers; it is inserted into a sentence like "we are looking for …")').then(res=>{
+      if(res[L]){ h.specL=h.specL||{}; h.specL[L]=String(res[L]); h.upd=Date.now(); persist(); rerender(); toast('Išversta'); }
+    }).catch(err=>{ toast('Vertimas nepavyko: '+(err.message||err)); b.disabled=false; b.textContent='🌐 išversti iš LT'; });
+    return true; }
   const ed=e.target.closest('[data-tpedit]'); if(ed){ e.stopPropagation(); TPL_EDIT[kind]=ed.dataset.tpedit; rerender(); return true; }
   const cp=e.target.closest('[data-tpcopy]'); if(cp){ e.stopPropagation(); const t=DATA.msgtpl.find(x=>x.id===cp.dataset.tpcopy); if(t){ const n={...t,id:'mt'+Date.now().toString(36),name:t.name+' (kopija)',upd:Date.now()}; DATA.msgtpl.push(n); TPL_EDIT[kind]=n.id; persist(); rerender(); } return true; }
   if(e.target.closest('[data-tpnew]')){ TPL_EDIT[kind]='new'; rerender(); return true; }
@@ -3410,7 +3455,7 @@ function tplPanelClick(e,kind,h,rerender){
     if(!confirm('Ištrinti šį šabloną?')) return true;
     DATA.msgtpl=DATA.msgtpl.filter(x=>x.id!==dl.dataset.tpdel); TPL_EDIT[kind]=null; persist(); rerender(); return true; }
   const use=e.target.closest('[data-tpuse]');
-  if(use && !e.target.closest('.tpcard.ed')){ if(h){ h.tplId=use.dataset.tpuse; h.upd=Date.now(); persist(); } rerender(); return true; }
+  if(use && !e.target.closest('.tpcard.ed') && !e.target.closest('.tptr')){ if(h){ h.tplId=use.dataset.tpuse; h.upd=Date.now(); persist(); } rerender(); return true; }
   return true;
 }
 // pirkimo kampanijos (kreipimosi planas)
@@ -5836,7 +5881,7 @@ function renderIntro(){
       <div class="out-sub">${t?'Paskutinis kontaktas '+fmtD(t.at)+': '+esc(String(t.txt).slice(0,90)):'Anksčiau kontaktų nebuvo'}</div>
       ${opts.length?`<label class="out-lab">Gavėjas
         <select id="ip-to">${opts.map((o,i)=>`<option value="${i}"${mw&&o.d===mw.d?' selected':''}>${esc(o.lab)}</option>`).join('')}</select></label>
-      <label class="out-lab">Žinutė (gali pataisyti)<textarea id="ip-txt" rows="8">${esc(txt)}</textarea></label>
+      <label class="out-lab">Žinutė (gali pataisyti)<textarea id="ip-txt" rows="8" dir="auto">${esc(txt)}</textarea></label>
       <div class="ch out-ch">
         <a class="wa" id="ip-wa" href="#" target="_blank" rel="noopener" data-ipch="wa">WhatsApp</a>
         <a class="vb" id="ip-vb" href="#" data-ipch="vb">Viber</a>
