@@ -387,6 +387,12 @@ td.rel-dot{text-align:center}
 .ritem:hover{border-color:var(--amber-dk);background:var(--amber-bg)}
 .ritem.on{border-color:var(--amber-dk);background:#FFF4DA}
 .ritem .t{font-weight:600;font-size:13px}
+.ritem{position:relative}
+.ritem .rdel{position:absolute;top:5px;right:5px;border:1px solid transparent;background:transparent;border-radius:3px;cursor:pointer;font-size:13px;opacity:.45;padding:1px 4px}
+.ritem:hover .rdel{opacity:1}
+.ritem .rdel:hover{border-color:#D0472F;background:#FBE9E5}
+.ritem .t{padding-right:24px}
+@media (hover:none){ .ritem .rdel{opacity:.9} }
 .ritem .m{font-size:11.5px;color:var(--steel);display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
 .ritem .st{font-family:var(--label);text-transform:uppercase;letter-spacing:.1em;font-size:9px;
   padding:1px 5px;border-radius:2px;color:#fff;background:var(--steel)}
@@ -1401,7 +1407,7 @@ tbody tr.done td:first-child{box-shadow:inset 3px 0 0 #1EA65A}
     <div class="tabs" id="d-tabs">
       <button data-t="ctc" class="on">Kontaktai</button>
       <button data-t="info">Įmonės duomenys</button>
-      <button data-t="veh">Transporto priemonės<span class="cnt" id="tab-veh"></span></button>
+      <button data-t="veh">Galerija<span class="cnt" id="tab-veh"></span></button>
       <button data-t="park">Transporto parkas<span class="cnt" id="tab-cnt"></span></button>
     </div>
   </div>
@@ -2564,6 +2570,7 @@ function renderReqList(){
     const d=new Date(r.created).toISOString().slice(0,10);
     const hasVF=(r.groups&&r.groups.length)||(r.filters&&VF.some(k=>r.filters[k]));
     return `<div class="ritem${curReq&&curReq.id===r.id?' on':''}" data-r="${r.id}">
+      <button class="rdel" data-rdel="${r.id}" title="Ištrinti užklausą">🗑</button>
       <div class="t">${r.status!=='uzdaryta'&&hasVF?`<input type="checkbox" class="rcb" data-cb="${r.id}" title="Pažymėk kelias užklausas bendram planui"${(reqSel.has(r.id))?' checked':''}>`:''}${esc(r.title||'(be pavadinimo)')}${r.groups&&r.groups.length?` <span class="rgrp">${r.groups.length} paieškos</span>`:''}</div>
       <div class="m"><span class="st${r.status!=='uzdaryta'?' a':''}">${r.status!=='uzdaryta'?'aktyvi':'uždaryta'}</span>
         <span>${d}</span>${r.buyer?`<span>${esc(r.buyer)}</span>`:''}
@@ -2610,16 +2617,27 @@ $('#rf-save').addEventListener('click',()=>{
   persist(); $('#reqform').hidden=true; renderReqList();
   toast('Užklausa išsaugota');
 });
+// užklausos ištrynimas: kontaktai su klientais lieka jų istorijoje kaip bendri kontaktai
+function deleteRequest(id){
+  const q=reqById(id); if(!q) return;
+  const n=reqContactCount(id);
+  if(!confirm('Ištrinti užklausą „'+(q.title||'be pavadinimo')+'“?'+(n?'\n\n'+n+' kreipimųsi įrašai liks klientų istorijoje kaip bendri kontaktai.':''))) return;
+  DATA.requests=DATA.requests.filter(x=>x.id!==id);
+  DATA.contacts.forEach(o=>{ if(o.req===id){ o.req=''; o.upd=Date.now(); } });
+  reqSel.delete(id); refreshComboBtn();
+  if(curReq&&curReq.id===id) setReq(null);
+  if(MULTI&&MULTI.host&&MULTI.host.id===id) setMulti(null);
+  persist(); $('#reqform').hidden=true; renderReqList(); draw(); toast('Užklausa ištrinta');
+}
 $('#rf-del').addEventListener('click',()=>{
-  if(!editReq || !confirm('Ištrinti užklausą ir jos kreipimųsi istoriją?')) return;
-  DATA.requests=DATA.requests.filter(x=>x.id!==editReq.id);
-  DATA.contacts=DATA.contacts.filter(o=>o.req!==editReq.id);
-  if(curReq&&curReq.id===editReq.id) setReq(null);
-  persist(); $('#reqform').hidden=true; renderReqList(); toast('Užklausa ištrinta');
+  if(!editReq) return;
+  deleteRequest(editReq.id); editReq=null; return;
 });
 $('#reqlist').addEventListener('click',e=>{
   const cb=e.target.closest('[data-cb]');
   if(cb){ e.stopPropagation(); if(cb.checked) reqSel.add(cb.dataset.cb); else reqSel.delete(cb.dataset.cb); refreshComboBtn(); return; }
+  const del=e.target.closest('[data-rdel]');
+  if(del){ e.stopPropagation(); deleteRequest(del.dataset.rdel); return; }
   const it=e.target.closest('[data-r]'); if(!it) return;
   const r=reqById(it.dataset.r);
   if(curReq&&curReq.id===r.id){ setReq(null); return; }
@@ -4394,7 +4412,7 @@ function vehSection(r){
     return h;
   }
   // --- katalogų sąrašas
-  h+=`<h3>Transporto priemonės (${cats.length})
+  h+=`<h3>Galerija (${cats.length} ${cats.length===1?'katalogas':'katalogai'})
       <button class="btn amber" id="vc-new" style="height:26px;margin-left:auto">+ Naujas katalogas</button></h3>`;
   const card=(id,title,desc,ph,nf_)=>`<div class="vccard" data-vcopen="${esc(id)}">
       <div class="vccover">${ph[0]?`<img src="${thumbOf(ph[0])}" alt="" loading="lazy">`:'<span>🚛</span>'}</div>
