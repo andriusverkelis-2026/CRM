@@ -767,6 +767,7 @@ tbody tr.done td:first-child{box-shadow:inset 3px 0 0 #1EA65A}
 <div class="panel" id="panel" hidden>
   <h4>Mano pakeitimai</h4>
   <div id="cloud-box" class="cloudbox" hidden></div>
+  <div id="cloud-bk" class="cloudbox" hidden></div>
   <div id="ed-info" style="font-size:13px;margin-bottom:10px"></div>
   <div class="row" id="fs-row">
     <button class="btn amber" id="fs-new" style="flex:1">Saugoti į failą</button>
@@ -1438,6 +1439,51 @@ C.payloadFromHtml=function(html){
 C.logout=async function(){
   try{ await fb.auth().signOut(); }catch(e){}
   await kvClear(); location.reload();
+};
+/* ---------- kasdienės atsarginės kopijos debesyje ---------- */
+const BK_KEEP=30, BK_EXTRA=5;
+const bkIdx=()=>db.doc('u/'+uid+'/b/_index');
+const todayKey=()=>{ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+function bkCounts(d){ return {p:(d.manual||[]).length, n:(d.notes||[]).length, r:(d.requests||[]).length,
+  c:(d.contacts||[]).length, f:(d.photos||[]).length, e:Object.keys(d.edits||{}).length}; }
+C.snapList=async function(){
+  if(!db||!uid) return [];
+  const s=await withTimeout(bkIdx().get(),12000);
+  return (s.exists && s.data().items) ? s.data().items.slice().sort((a,b)=>b.at-a.at) : [];
+};
+C.snapSave=async function(d,key,note){
+  const text=JSON.stringify(d);
+  const gz=await gzip(text);
+  const n=Math.ceil(gz.length/CH)||1;
+  for(let i=0;i<n;i++)
+    await db.doc('u/'+uid+'/b/'+key+'~'+i).set({b:fb.firestore.Blob.fromUint8Array(gz.slice(i*CH,(i+1)*CH))});
+  const s=await bkIdx().get();
+  let items=(s.exists && s.data().items)||[];
+  items=items.filter(x=>x.k!==key);
+  items.push({k:key,at:Date.now(),n,size:gz.length,cnt:bkCounts(d),note:note||''});
+  // senų išvalymas: 30 kasdienių + 5 papildomos (pvz. „prieš atkūrimą“)
+  const daily=items.filter(x=>!x.note).sort((a,b)=>b.at-a.at), extra=items.filter(x=>x.note).sort((a,b)=>b.at-a.at);
+  const drop=daily.slice(BK_KEEP).concat(extra.slice(BK_EXTRA));
+  items=items.filter(x=>!drop.includes(x));
+  await bkIdx().set({items});
+  for(const x of drop) for(let i=0;i<x.n;i++){ try{ await db.doc('u/'+uid+'/b/'+x.k+'~'+i).delete(); }catch(e){} }
+  return items;
+};
+C.snapLoad=async function(item){
+  const parts=[];
+  for(let i=0;i<item.n;i++){ const s=await db.doc('u/'+uid+'/b/'+item.k+'~'+i).get(); parts.push(s.data().b.toUint8Array()); }
+  const all=new Uint8Array(parts.reduce((a,p)=>a+p.length,0)); let o=0;
+  parts.forEach(p=>{ all.set(p,o); o+=p.length; });
+  return JSON.parse(await gunzip(all));
+};
+C.snapDaily=async function(d){
+  if(!db||!uid) return null;
+  try{
+    const k=todayKey(), list=await C.snapList();
+    if(list.some(x=>x.k===k)) return list;
+    const c=bkCounts(d); if(!(c.p+c.n+c.r+c.c+c.f+c.e)) return list;   // tuščių nekopijuojam
+    return await C.snapSave(d,k,'');
+  }catch(e){ return null; }
 };
 C.getSecret=async function(){
   if(!db||!uid) return null;
@@ -4272,7 +4318,7 @@ function refreshPanel(){
     ?'Pakeitimai saugomi šioje naršyklėje. Kitame įrenginyje jų nebus – perkelk per failą.'
     :'Naršyklė neleidžia išsaugoti pakeitimų. Būtinai išsaugok juos į failą prieš uždarant.';
   if(CLOUD_ON) $('#ed-storage').textContent='Įrašai saugomi debesyje ir šiame įrenginyje.';
-  if(typeof renderCloudBox==='function') renderCloudBox();
+  if(typeof renderCloudBox==='function'){ renderCloudBox(); renderBackups(); }
   $('#ed-badge').hidden=n===0; $('#ed-badge').textContent=n;
 }
 $('#btn-changes').addEventListener('click',()=>{
@@ -4370,7 +4416,7 @@ $('#warn-x').addEventListener('click',()=>{ warnHidden=true; refreshWarn(); });
 let backupSnoozed=false;
 function refreshBackupReminder(){
   const bar=$('#backupbar');
-  if(backupSnoozed || isPhone()){ bar.hidden=true; return; }
+  if(backupSnoozed || isPhone() || CLOUD_ON){ bar.hidden=true; return; }
   const empty = !DATA.contacts.length && !DATA.notes.length && !DATA.requests.length
              && !DATA.photos.length && !DATA.manual.length && !Object.keys(EDITS).length;
   if(empty){ bar.hidden=true; return; }   // nėra ką prarasti – netrukdom
@@ -4623,6 +4669,75 @@ function renderCloudBox(){
   }
   $('#cl-out').onclick=()=>{ if(confirm('Atsijungti? Šiame įrenginyje išsaugoti duomenys bus išvalyti (debesyje jie lieka).')) C.logout(); };
 }
+/* ---- atsarginės kopijos debesyje ---- */
+var bkList=null, bkOpen=false, bkBusy=false;
+const bkCntTxt=c=>c?[c.p+' partn.',c.n+' past.',c.r+' užkl.',c.c+' kontakt.',c.f+' nuotr.',c.e+' įmon. red.'].join(' · '):'';
+function bkLabel(x){
+  const d=new Date(x.at), hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  return (x.note? x.k.slice(0,10)+' '+hm+' · '+x.note : x.k+' '+hm);
+}
+function renderBackups(){
+  const box=$('#cloud-bk');
+  if(!CLOUD_ON || !window.CLOUD.status().ready){ box.hidden=true; return; }
+  box.hidden=false;
+  const last=bkList&&bkList[0];
+  let h=`<div>🗂 <b>Atsarginės kopijos debesyje</b></div>
+    <div class="muted">Kopija daroma automatiškai kartą per dieną, saugomos 30 paskutinių dienų.
+      ${bkList===null?'':(last?'Paskutinė: '+esc(bkLabel(last))+' · iš viso '+bkList.length:'Kopijų dar nėra.')}</div>
+    <div class="row"><button class="btn ghost" id="bk-toggle" style="flex:1">${bkOpen?'Slėpti kopijas':'Rodyti kopijas / atkurti'}</button>
+      <button class="btn ghost" id="bk-now">Padaryti dabar</button></div>`;
+  if(bkOpen && bkList){
+    h+='<div style="max-height:260px;overflow:auto;margin-top:7px;border-top:1px solid var(--line)">'+
+      (bkList.length?bkList.map((x,i)=>`<div style="padding:6px 0;border-bottom:1px solid var(--line)">
+        <div><b>${esc(bkLabel(x))}</b></div><div class="muted">${esc(bkCntTxt(x.cnt))}</div>
+        <div style="display:flex;gap:6px;margin-top:4px">
+          <button class="btn ghost" data-bkres="${i}" style="height:28px">Atkurti</button>
+          <button class="btn ghost" data-bkdl="${i}" style="height:28px">Atsisiųsti .json</button></div></div>`).join('')
+       :'<div class="muted" style="padding:6px 0">Kopijų dar nėra.</div>')+'</div>';
+  }
+  box.innerHTML=h;
+}
+async function loadBackups(){ try{ bkList=await window.CLOUD.snapList(); }catch(e){ bkList=[]; } renderBackups(); }
+$('#cloud-bk').addEventListener('click',async e=>{
+  if(bkBusy) return;
+  const C=window.CLOUD;
+  if(e.target.closest('#bk-toggle')){ bkOpen=!bkOpen; if(bkOpen) await loadBackups(); else renderBackups(); return; }
+  if(e.target.closest('#bk-now')){
+    bkBusy=true; toast('Daroma kopija…');
+    try{ bkList=(await C.snapSave(DATA, new Date().toISOString().slice(0,10)+'_'+Date.now(), 'rankinė')).sort((a,b)=>b.at-a.at); toast('Kopija padaryta'); }
+    catch(x){ toast('Nepavyko: '+(x.message||x.code||x)); }
+    bkBusy=false; renderBackups(); return;
+  }
+  const dl=e.target.closest('[data-bkdl]');
+  if(dl){
+    const it=bkList[+dl.dataset.bkdl]; bkBusy=true; toast('Atsisiunčiama…');
+    try{ const d=await C.snapLoad(it);
+      const b=new Blob([JSON.stringify(d,null,1)],{type:'application/json'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='crm_duomenys_kopija_'+it.k.slice(0,10)+'.json'; a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    }catch(x){ toast('Nepavyko: '+(x.message||x.code||x)); }
+    bkBusy=false; return;
+  }
+  const rs=e.target.closest('[data-bkres]');
+  if(rs){
+    const it=bkList[+rs.dataset.bkres];
+    const now=bkCntTxt({p:(DATA.manual||[]).length,n:(DATA.notes||[]).length,r:(DATA.requests||[]).length,
+      c:(DATA.contacts||[]).length,f:(DATA.photos||[]).length,e:Object.keys(DATA.edits||{}).length});
+    if(!confirm('Atkurti duomenis iš kopijos '+bkLabel(it)+'?\n\nKopijoje: '+bkCntTxt(it.cnt)+'\nDabar: '+now+
+      '\n\nVisi dabartiniai įrašai bus pakeisti kopijos įrašais visuose įrenginiuose. Prieš tai dabartinė būklė bus išsaugota kaip atskira kopija „prieš atkūrimą“, tad galėsi grįžti.')) return;
+    bkBusy=true; toast('Atkuriama…');
+    try{
+      const d=await C.snapLoad(it);
+      await C.snapSave(DATA, new Date().toISOString().slice(0,10)+'_'+Date.now(), 'prieš atkūrimą');
+      useData(d); persist();
+      ROWS.forEach(reindex); refreshSav(); apply(); refreshPanel(); renderReqList();
+      refreshLogBadge(); refreshPartnersBadge(); refreshGalleryBadge();
+      toast('Atkurta iš kopijos '+it.k.slice(0,10));
+      await loadBackups();
+    }catch(x){ toast('Nepavyko atkurti: '+(x.message||x.code||x)); }
+    bkBusy=false; return;
+  }
+});
 $('#cloud-st').addEventListener('click',()=>{ const p=$('#panel'); p.hidden=false; refreshPanel(); });
 if(CLOUD_ON){
   window.CLOUD.setApplier(cloudApply);
@@ -4630,13 +4745,16 @@ if(CLOUD_ON){
   window.cloudStatusChanged=()=>{ renderCloudStatus(); if(!$('#panel').hidden) renderCloudBox(); };
   window.cloudReady=()=>{
     window.CLOUD.flushNow(DATA);
-    aiKeyFromCloud();   // tai, kas pakeista be ryšio
+    aiKeyFromCloud();
+    // kasdienė kopija (pirmą kartą per dieną atsidarius) – būklė prieš šios dienos pakeitimus
+    if(!window.CLOUD.cloudEmpty) setTimeout(async()=>{ const l=await window.CLOUD.snapDaily(DATA); if(l){ bkList=l.slice().sort((a,b)=>b.at-a.at); renderBackups(); } },4000);   // tai, kas pakeista be ryšio
     renderCloudStatus(); renderCloudBox();
     if(window.CLOUD.cloudEmpty && !isPhone()){ $('#panel').hidden=false; refreshPanel(); }
   };
   setInterval(renderCloudStatus,30000);
 }
 
+if(D.fleetdate){ const eb=document.querySelector('.masthead .eyebrow'); if(eb) eb.textContent='Parkų duomenys '+D.fleetdate+' · kontaktai iš klientų bazės'; }
 $('#s-comp').textContent=nf.format(ROWS.length);
 $('#s-veh').textContent=nf.format(NV);
 $('#s-ctc').textContent=nf.format(ROWS.filter(r=>r[HAS]).length);
