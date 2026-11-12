@@ -258,6 +258,32 @@ td.hit .mg{font-size:10.5px;font-weight:400;font-family:var(--mono)}
 .aichip{font-size:11.5px;background:var(--amber-bg);color:var(--amber-dk);border:1px solid var(--line);border-radius:2px;padding:2px 7px}
 .aiq-acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .aiq-top{display:flex;gap:12px;align-items:flex-start}
+.ipb .iprow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:9px;font-size:13px}
+.ipb .iprow > span,.ipb .iprow > b{min-width:150px;color:var(--steel);font-size:12px}
+.ipb .iprow > b{color:var(--ink)}
+.ipb label{display:flex;gap:5px;align-items:center;cursor:pointer}
+.ipb select,.ipb input[type=text],#ip-title{font-size:13px;border:1px solid var(--line);border-radius:3px;padding:5px 8px;width:auto;height:32px}
+.ipnote{font-size:12px;color:var(--steel-2)}
+.ipcount{font-size:12.5px;margin:6px 0}
+.iplist{border:1px solid var(--line-2);border-radius:3px;max-height:46vh;overflow:auto}
+.ipit{display:flex!important;gap:10px;align-items:baseline;padding:6px 10px;border-bottom:1px solid var(--line-2);font-size:13px}
+.ipit span{color:var(--steel);font-size:12px}.ipit .d{margin-left:auto;font-family:var(--mono);font-size:11px}
+.out-msgwrap{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,1fr);gap:16px;align-items:start}
+.out-tpl{border:1px solid var(--line-2);border-radius:4px;padding:10px;background:#FAFBFC}
+.tpsec{font-family:var(--label);text-transform:uppercase;letter-spacing:.1em;font-size:9.5px;color:var(--steel);margin:4px 0 5px}
+#tp-spec{width:100%;font-size:13px;border:1px solid var(--line);border-radius:3px;padding:6px 8px;margin-bottom:10px}
+.tplist{max-height:52vh;overflow:auto;display:flex;flex-direction:column;gap:6px}
+.tpcard{border:1px solid var(--line-2);border-radius:3px;background:#fff;padding:7px 9px;cursor:pointer}
+.tpcard:hover{border-color:var(--amber-dk)}
+.tpcard.on{border-color:var(--amber);box-shadow:inset 3px 0 0 var(--amber);background:var(--amber-bg)}
+.tpcard.ed{cursor:default;display:flex;flex-direction:column;gap:5px}
+.tpcard.ed input,.tpcard.ed select,.tpcard.ed textarea{font-size:13px;border:1px solid var(--line);border-radius:2px;padding:5px 7px;font-family:var(--body)}
+.tph{display:flex;gap:6px;align-items:center;font-size:13px}
+.tplang{font-family:var(--mono);font-size:10px;background:var(--ink-3);color:#fff;border-radius:3px;padding:1px 5px}
+.tpprev{font-size:12px;color:#5C6975;margin-top:3px;white-space:pre-wrap;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.tpacts{display:flex;gap:6px;align-items:center}
+.tphint{font-size:11px;color:var(--steel-2);margin-top:8px;line-height:1.5}
+@media (max-width:900px){ .out-msgwrap{grid-template-columns:1fr} }
 .ainotes{margin:10px 0;border:1px solid #CFE0D6;background:#F4FAF6;border-radius:4px;padding:8px 10px}
 .ainotes > summary{cursor:pointer;font-size:13px}
 .ainote-p{font-size:12px;color:var(--steel)}
@@ -805,7 +831,7 @@ tbody tr.done td:first-child{box-shadow:inset 3px 0 0 #1EA65A}
   #btn-changes.unsaved{background:#2A3A4A!important;color:#fff!important;border:2px solid var(--amber)!important}
   .mast-stats .btn:active{filter:brightness(1.15)}
   #btn-today{order:0;grid-column:1/-1;background:#C9A227;color:#1A1A1A}
-  #btn-log{order:1}#btn-hist{order:2}#btn-cal{order:3}#btn-partners{order:4}#btn-req{order:5}#btn-needs{order:6;background:#1F6F78}
+  #btn-log{order:1}#btn-hist{order:2}#btn-cal{order:3}#btn-partners{order:4}#btn-req{order:5}#btn-needs{order:6;background:#1F6F78}#btn-intro{order:7;background:#8A5A2B}
   #btn-gallery,#btn-changes{display:none!important}
   .cloudst{height:42px;margin-bottom:0;padding:0 8px;font-size:11.5px;border-radius:4px;order:9}
   .vfilters{display:none!important}
@@ -931,6 +957,7 @@ tbody tr.done td:first-child{box-shadow:inset 3px 0 0 #1EA65A}
     <button class="btn ghost" id="btn-hist" style="margin-bottom:2px"><span class="hide-m">Įvykių </span>istorija</button>
     <button class="btn ghost" id="btn-cal" style="margin-bottom:2px">Kalendorius</button>
     <button class="btn ghost" id="btn-needs" style="margin-bottom:2px">Poreikiai</button>
+    <button class="btn ghost" id="btn-intro" style="margin-bottom:2px">Prisistatymas</button>
     <button class="btn ghost" id="btn-req" style="margin-bottom:2px">
       Užklausos<span class="badge" id="req-badge" hidden>0</span></button>
     <button class="btn ghost" id="btn-changes" style="margin-bottom:2px">
@@ -1171,6 +1198,20 @@ tbody tr.done td:first-child{box-shadow:inset 3px 0 0 #1EA65A}
       <button class="dclose" id="td-close" aria-label="Uždaryti">✕</button>
     </div>
     <div class="logbody" id="td-body" style="padding:12px 16px;overflow:auto"></div>
+  </div>
+</div>
+<div class="logmodal" id="intropanel" hidden>
+  <div class="logwrap" style="width:min(1250px,97vw)">
+    <div class="loghead">
+      <h4 style="margin:0;flex:1">Prisistatymas ir priminimai <span id="ip-sub" style="font-weight:400;font-size:13px;color:#9AA6B2;margin-left:8px"></span></h4>
+      <button class="dclose" id="ip-close" aria-label="Uždaryti">✕</button>
+    </div>
+    <div class="logfilters">
+      <button class="lgchip all on" data-it="build">1. Gavėjai</button>
+      <button class="lgchip" data-it="queue">2. Siuntimo eilė <b id="ip-n-q">0</b></button>
+      <button class="lgchip" data-it="hist">Ankstesni siuntimai <b id="ip-n-h">0</b></button>
+    </div>
+    <div class="logbody" id="ip-body" style="padding:12px 16px;overflow:auto"></div>
   </div>
 </div>
 <div class="logmodal" id="needspanel" hidden>
@@ -1527,8 +1568,8 @@ async function gunzip(u8){
 }
 
 /* ---------- duomenų skaidymas į įrašus ---------- */
-const ARR_KEYS=['requests','outreach','templates','contacts','notes','manual','photos','aisearch','mlinks','vcat','vfiles'];
-const MAP_KEYS=['edits','ai','combos'];
+const ARR_KEYS=['requests','outreach','templates','contacts','notes','manual','photos','aisearch','mlinks','vcat','vfiles','msgtpl','campaigns'];
+const MAP_KEYS=['edits','ai','combos','nocontact'];
 const ROOT_KEYS=['me','tplV','v','_migr'];
 function itemId(k,x){
   if(k==='mlinks') return [x[0],x[1]].sort().join('_');
@@ -2040,7 +2081,7 @@ const FS_OK = typeof window!=='undefined' && 'showSaveFilePicker' in window;
 function normalize(o){
   const d={v:1, edits:{}, requests:[], outreach:[], templates:DEF_TPL.slice(),
            me:{vardas:'Andrius V.', imone:'', tel:''},
-           mlinks:[], manual:[], photos:[], vcat:[], vfiles:[], assign:{}, contacts:[], notes:[], ai:{}, aisearch:[], combos:{}};
+           mlinks:[], manual:[], photos:[], vcat:[], vfiles:[], msgtpl:[], campaigns:[], nocontact:{}, assign:{}, contacts:[], notes:[], ai:{}, aisearch:[], combos:{}};
   if(!o) return d;
   if(o.edits||o.requests||o.outreach) Object.assign(d,o);
   else d.edits=o;                       // senas formatas – tik pataisymai
@@ -2058,7 +2099,7 @@ function normalize(o){
   d.mlinks=d.mlinks||[];
   d.manual=d.manual||[];
   d.photos=d.photos||[];
-  d.vcat=d.vcat||[]; d.vfiles=d.vfiles||[];
+  d.vcat=d.vcat||[]; d.vfiles=d.vfiles||[]; d.msgtpl=d.msgtpl||[]; d.campaigns=d.campaigns||[]; d.nocontact=d.nocontact||{};
   d.ai=d.ai||{};
   d.aisearch=d.aisearch||[];
   d.combos=d.combos||{};
@@ -2684,7 +2725,9 @@ function fillTpl(r, txt, who, spec){
     .replace(/\{tp\}/g, tpSummary(r))
     .replace(/\{mano_vardas\}/g, DATA.me.vardas||'')
     .replace(/\{mano_imone\}/g, DATA.me.imone||'')
-    .replace(/\{mano_tel\}/g, DATA.me.tel||'');
+    .replace(/\{mano_tel_n\}/g, DATA.me.tel?'\n'+DATA.me.tel:'')
+    .replace(/\{mano_tel\}/g, DATA.me.tel||'')
+    .replace(/([^.])\.\.(?!\.)/g,'$1.');          // „m..“ -> „m.“
 }
 function updateLinks(){
   if(!cur||!$('#ch-wa')) return;
@@ -2694,7 +2737,8 @@ function updateLinks(){
   const t=tels[isNaN(ti)?0:ti], m=mails[isNaN(mi)?0:mi];
   const tpl=ch=>DATA.templates.find(x=>x.ch===ch)||{text:'',subject:''};
   const who=t?t.who:(val(cur,'asm1')||'');
-  const enc=ch=>encodeURIComponent(req?fillTpl(cur, tpl(ch).text, who, req.spec||req.title||''):'');
+  const rt=req&&req.tplId?(DATA.msgtpl||[]).find(x=>x.id===req.tplId):null;
+  const enc=ch=>encodeURIComponent(req?fillTpl(cur, rt?rt.text:tpl(ch).text, who, (rt&&req.specL&&req.specL[rt.lang])||req.spec||req.title||''):'');
   const set=(id,href,ok)=>{
     const el=$('#'+id); if(!el) return;
     el.href = ok?href:'#';
@@ -3136,10 +3180,20 @@ function aiChartHTML(){
       <span class="aich-bar${MULTI?' multi':''}">${bar(r)}</span>
       <span class="aich-n">${MULTI?multiBreak(r):nf.format(r[HIT])}</span></div>`).join('')}</div></div>`;
 }
+// trumpas „ko ieškoma“ žinutei: „DAF XF vilkikų, 2020–2021 m.“
+function shortSpec(o){
+  const g=k=>String((o&&o[k])||'');
+  const mk=[canonMake(g('#v-marke')),g('#v-modelis')].filter(Boolean).join(' ').trim();
+  const rus=g('#v-rus')!==''?RUS[+g('#v-rus')]:'', kat=g('#v-kat')!==''?KATS[+g('#v-kat')]:'';
+  const noun=rus==='Sunkvežimis'?(kat==='N3'?'vilkikų':'sunkvežimių'):rus==='Puspriekabė'?'puspriekabių':rus==='Priekaba'?'priekabų':rus==='Autobusas'?'autobusų':'';
+  const y1=g('#v-y1'), y2=g('#v-y2'), yr=y1||y2?((y1&&y2&&y1!==y2)?y1+'–'+y2:(y1||y2))+' m.':'';
+  const head=[mk, noun].filter(Boolean).join(' ');
+  return [head, yr].filter(Boolean).join(', ');
+}
 function aiSaveAsRequest(){
   if(!aiQLast) return;
   const desc=String(aiQLast.f.paaiskinimas||aiQLast.q).trim();
-  const spec=MULTI?MULTI.groups.map(g=>g.label).join(' ir '):desc;
+  const spec=MULTI?MULTI.groups.map(g=>shortSpec(g.snap)||g.label).join(' ir '):(shortSpec(snapFilters())||desc);
   const r={id:uid(), created:Date.now(), upd:Date.now(), title:desc.slice(0,80), buyer:'', bctc:'',
     spec, note:'AI paieška: '+aiQLast.q, status:'aktyvi', filters:snapFilters(), co:CO_COND||null,
     groups:MULTI?MULTI.groups.map(g=>({label:g.label,snap:g.snap})):null};
@@ -3179,13 +3233,16 @@ function aiRestoreSearch(id){
 let outTab='plan', outIdx=0, outLastCh='', COMBO=null;
 function outHost(){ return MULTI&&MULTI.host?MULTI.host:curReq; }
 function outCfg(){ const h=outHost(); h.planCfg=h.planCfg||{hit:5, fleet:50}; return h.planCfg; }
-function outRows(){ if(!vActive && CO_COND) return rows.slice(0,1500); return ROWS.filter(r=>r[HIT]>0&&coOK(r)).sort((a,b)=>(MULTI?(b._ng-a._ng):0)||b[HIT]-a[HIT]||b[16]-a[16]).slice(0,1500); }
+const noCt=cid=>!!(DATA.nocontact&&DATA.nocontact[cid]);
+function outRows(){ if(!vActive && CO_COND) return rows.filter(r=>!noCt(r[0])).slice(0,1500); return ROWS.filter(r=>r[HIT]>0&&coOK(r)&&!noCt(r[0])).sort((a,b)=>(MULTI?(b._ng-a._ng):0)||b[HIT]-a[HIT]||b[16]-a[16]).slice(0,1500); }
 function outReqIds(r){
   if(MULTI){ const s2=new Set(); MULTI.groups.forEach((g,k)=>{ if(r._mg&&r._mg[k]>0&&g.reqId) s2.add(g.reqId); }); return [...s2]; }
   return curReq?[curReq.id]:[];
 }
 function outDone(r){ const ids=outReqIds(r); return ids.length>0 && ids.every(id=>DATA.contacts.some(o=>o.req===id&&o.cid===r[0])); }
 function outSpec(r){
+  const L=outTplCur().lang||'lt', h=outHost();
+  if(h && h.specL && h.specL[L] && !(MULTI&&MULTI.groups.length>1)) return h.specL[L];
   if(!MULTI) return curReq?(curReq.spec||curReq.title||''):'';
   const parts=[];
   MULTI.groups.forEach((g,k)=>{ if(r._mg&&r._mg[k]>0){
@@ -3265,10 +3322,10 @@ function renderOut(){
     if(!q.length){ b.innerHTML=`<div class="out-hint">Visoms žinučių sąrašo įmonėms jau išsiųsta. Kreiptasi: ${msg.length}.</div>`; return; }
     if(outIdx>=q.length) outIdx=0;
     const r=q[outIdx], mobs=mobileOptions(r);
-    const tpl=(DATA.templates.find(x=>x.ch==='wa')||{text:''}).text;
+    const tpl=outTplCur().text||'';
     const mw=mobs.find(t=>t.d===outWho(r))||mobs[0];
     const txt=fillTpl(r,tpl,mw&&mw.lab.includes(' · ')?mw.lab.split(' · ')[0]:'', outSpec(r));
-    b.innerHTML=`<div class="out-q">
+    b.innerHTML=`<div class="out-msgwrap"><div class="out-q">
       <div class="out-prog">Įmonė <b>${outIdx+1}</b> iš <b>${q.length}</b> neišsiųstų · išsiųsta ${msg.length-q.length}</div>
       <div class="out-card">
         <div class="out-nm"><a href="#" data-oc="${esc(r[0])}">${esc(r[1])}</a></div>
@@ -3290,11 +3347,76 @@ function renderOut(){
           <button class="btn amber" data-plan="${esc(r[0])}" data-v="call">Perkelti į „Skambinti“</button></div>`}
       </div>
       <div class="out-hint">Paspausk „WhatsApp“ arba „SMS“, išsiųsk žinutę, tada „Išsiųsta → kita“ – įmonė bus pažymėta „kreiptasi“${MULTI&&MULTI.kind==='req'?' prie visų atitinkamų užklausų':' pagal užklausą'}.</div>
-    </div>`;
+    </div>${outTplPanel()}</div>`;
     outUpdateLinks();
   }
 }
 function outQueue(){ return outRows().filter(r=>outChoice(r)==='msg'&&!outDone(r)); }
+/* ---- žinučių šablonai: bendras komponentas (pirkimo kampanijos ir prisistatymas) ---- */
+const TPL_LANGS=[['lt','LT'],['en','EN'],['ru','RU'],['pl','PL'],['de','DE'],['lv','LV']];
+const tplsOf=kind=>(DATA.msgtpl||[]).filter(t=>(t.kind||'buy')===kind);
+function seedMsgTpl(){
+  DATA.msgtpl=DATA.msgtpl||[];
+  const t=(id,name,lang,text,kind)=>({id,name,lang,text,kind,upd:Date.now()});
+  if(!tplsOf('buy').length) DATA.msgtpl.push(
+    t('mt1','Sveiki, ieškome…','lt',MSG,'buy'),
+    t('mt2','Laba diena, nupirkčiau…','lt','Laba diena{, asmuo}, nupirkčiau {ko_ieskoma}. Jei turite ar planuojate parduoti – parašykite, aptarsime kainą.\n\n{mano_vardas}\n{mano_tel}','buy'),
+    t('mt3','Good day (EN)','en','Good day{, asmuo}, at the moment I am interested in buying {ko_ieskoma}. If you have such vehicles for sale, I would be glad to receive your offer.\n\nBest regards,\n{mano_vardas}','buy'),
+    t('mt4','Здравствуйте (RU)','ru','Здравствуйте{, asmuo}! Сейчас ищем для покупки {ko_ieskoma}. Если у вас есть такая техника на продажу, будем рады вашему предложению.\n\nС уважением,\n{mano_vardas}','buy'));
+  if(!tplsOf('intro').length) DATA.msgtpl.push(
+    t('it1','Prisistatymas (LT)','lt','Laba diena{, asmuo}! Esu {mano_vardas} iš {mano_imone}. Užsiimame komercinio transporto – vilkikų, puspriekabių ir priekabų – prekyba: perkame, parduodame ir padedame surasti reikiamą techniką Europoje.\n\nJei šiuo metu ieškote ar planuojate parduoti techniką – būtų smagu pasikalbėti.\n\nPagarbiai,\n{mano_vardas}\n{mano_tel}','intro'),
+    t('it2','Priminimas – kaip sekasi? (LT)','lt','Sveiki{, asmuo}! Čia {mano_vardas} iš {mano_imone}. Norėjau pasiteirauti, kaip sekasi? Gal šiuo metu ieškote ko nors nupirkti ar planuojate ką nors parduoti? Mielai padėsiu.\n\n{mano_vardas}\n{mano_tel}','intro'),
+    t('it3','Introduction (EN)','en','Good day{, asmuo}! My name is {mano_vardas}, {mano_imone}. We trade commercial vehicles – trucks, semi-trailers and trailers: we buy, sell and help to source the right equipment across Europe.\n\nIf you are looking for vehicles or planning to sell some, I would be glad to talk.\n\nBest regards,\n{mano_vardas}\n{mano_tel}','intro'),
+    t('it4','Знакомство (RU)','ru','Здравствуйте{, asmuo}! Меня зовут {mano_vardas}, компания {mano_imone}. Мы занимаемся торговлей коммерческой техникой – тягачи, полуприцепы, прицепы: покупаем, продаём и помогаем подобрать технику в Европе.\n\nЕсли ищете технику или планируете продать – буду рад пообщаться.\n\nС уважением,\n{mano_vardas}\n{mano_tel}','intro'));
+}
+function tplCur(kind,h){ seedMsgTpl(); const L=tplsOf(kind); return L.find(x=>x.id===(h&&h.tplId)) || L[0] || {text:'',lang:'lt'}; }
+const TPL_EDIT={};
+function tplPanelHTML(kind,h,withSpec){
+  const cur=tplCur(kind,h), L=cur.lang||'lt', ed=TPL_EDIT[kind];
+  const spec=withSpec?((h&&h.specL&&h.specL[L]) || (L==='lt'?(h&&(h.spec||h.title))||'':'')):'';
+  const langSel=v=>`<select class="tp-lang">${TPL_LANGS.map(([k,l])=>`<option value="${k}"${k===v?' selected':''}>${l}</option>`).join('')}</select>`;
+  const edBox=(t,id)=>`<div class="tpcard ed"><input class="tp-name" value="${esc(t.name||'')}" placeholder="Pavadinimas">${langSel(t.lang||'lt')}
+      <textarea class="tp-text" rows="8" placeholder="Sveiki{, asmuo}, …">${esc(t.text||'')}</textarea>
+      <div class="tpacts"><button class="btn amber" data-tpsave="${esc(id)}" style="height:28px">Išsaugoti</button>
+      <button class="btn ghost" data-tpcancel="1" style="height:28px">Atšaukti</button><span style="flex:1"></span>
+      ${id!=='new'?`<button class="btn ghost" data-tpdel="${esc(id)}" style="height:28px;color:#B3402C">Ištrinti</button>`:''}</div></div>`;
+  const list=tplsOf(kind).map(t=> ed===t.id ? edBox(t,t.id) : `<div class="tpcard${t.id===cur.id?' on':''}" data-tpuse="${esc(t.id)}">
+      <div class="tph"><span class="tplang">${esc((t.lang||'lt').toUpperCase())}</span><b>${esc(t.name||'(be pavadinimo)')}</b>
+        <span style="flex:1"></span><button class="sigb" data-tpedit="${esc(t.id)}" title="Redaguoti">✎</button><button class="sigb" data-tpcopy="${esc(t.id)}" title="Kopijuoti">⧉</button></div>
+      <div class="tpprev">${esc(t.text)}</div></div>`).join('');
+  return `<div class="out-tpl" data-tpkind="${kind}">
+    ${withSpec?`<div class="tpsec">Ko ieškoma (${esc(L.toUpperCase())}) – įsistato vietoj {ko_ieskoma}</div>
+    <input class="tp-spec" value="${esc(spec)}" placeholder="${L==='en'?'pvz. DAF XF trucks, 2020–2021':L==='ru'?'pvz. тягачи DAF XF 2020–2021 г.':'pvz. DAF XF vilkikų, 2020–2021 m.'}">`:''}
+    <div class="tpsec" style="display:flex;align-items:center">Žinutės šablonas<span style="flex:1"></span>
+      <button class="btn ghost" data-tpnew="1" style="height:26px">+ Naujas</button></div>
+    <div class="tplist">${ed==='new'?edBox({lang:'lt'},'new'):''}${list}</div>
+    <div class="tphint">Žymės: {asmuo} arba {, asmuo} – vardas · {imone} · ${withSpec?'{ko_ieskoma} · {tp} · ':''}{mano_vardas} · {mano_imone} · {mano_tel}${withSpec?'':'<br>Savo vardą, įmonę ir telefoną nustatai lange „Duomenys“ → „Mano parašas žinutėse“.'}</div>
+  </div>`;
+}
+function tplPanelClick(e,kind,h,rerender){
+  const box=e.target.closest('.out-tpl'); if(!box) return false;
+  const ed=e.target.closest('[data-tpedit]'); if(ed){ e.stopPropagation(); TPL_EDIT[kind]=ed.dataset.tpedit; rerender(); return true; }
+  const cp=e.target.closest('[data-tpcopy]'); if(cp){ e.stopPropagation(); const t=DATA.msgtpl.find(x=>x.id===cp.dataset.tpcopy); if(t){ const n={...t,id:'mt'+Date.now().toString(36),name:t.name+' (kopija)',upd:Date.now()}; DATA.msgtpl.push(n); TPL_EDIT[kind]=n.id; persist(); rerender(); } return true; }
+  if(e.target.closest('[data-tpnew]')){ TPL_EDIT[kind]='new'; rerender(); return true; }
+  if(e.target.closest('[data-tpcancel]')){ TPL_EDIT[kind]=null; rerender(); return true; }
+  const sv=e.target.closest('[data-tpsave]');
+  if(sv){ const card=sv.closest('.tpcard'); const name=card.querySelector('.tp-name').value.trim()||'Šablonas', lang=card.querySelector('.tp-lang').value, text=card.querySelector('.tp-text').value;
+    if(!text.trim()){ toast('Įrašyk žinutės tekstą'); return true; }
+    if(sv.dataset.tpsave==='new'){ const n={id:'mt'+Date.now().toString(36),name,lang,text,kind,upd:Date.now()}; DATA.msgtpl.push(n); if(h){ h.tplId=n.id; h.upd=Date.now(); } }
+    else { const t=DATA.msgtpl.find(x=>x.id===sv.dataset.tpsave); if(t) Object.assign(t,{name,lang,text,upd:Date.now()}); }
+    TPL_EDIT[kind]=null; persist(); rerender(); toast('Šablonas išsaugotas'); return true; }
+  const dl=e.target.closest('[data-tpdel]');
+  if(dl){ if(tplsOf(kind).length<=1){ toast('Turi likti bent vienas šablonas'); return true; }
+    if(!confirm('Ištrinti šį šabloną?')) return true;
+    DATA.msgtpl=DATA.msgtpl.filter(x=>x.id!==dl.dataset.tpdel); TPL_EDIT[kind]=null; persist(); rerender(); return true; }
+  const use=e.target.closest('[data-tpuse]');
+  if(use && !e.target.closest('.tpcard.ed')){ if(h){ h.tplId=use.dataset.tpuse; h.upd=Date.now(); persist(); } rerender(); return true; }
+  return true;
+}
+// pirkimo kampanijos (kreipimosi planas)
+function outTplCur(){ return tplCur('buy',outHost()); }
+function outTplPanel(){ return tplPanelHTML('buy',outHost(),true); }
+function outTplClick(e){ return tplPanelClick(e,'buy',outHost(),renderOut); }
 function outUpdateLinks(){
   const r=outQueue()[outIdx]; if(!r||!$('#out-wa')) return;
   const mobs=mobileOptions(r), t=mobs[+($('#out-to')||{}).value||0]; if(!t) return;
@@ -3311,6 +3433,13 @@ $('#outpanel').addEventListener('input',e=>{
     const pos=e.target.id; renderOut(); const el=$('#'+pos); if(el){ el.focus(); el.setSelectionRange(99,99); }
   }
   if(e.target.id==='out-txt') outUpdateLinks();
+  if(e.target.classList && e.target.classList.contains('tp-spec')){
+    const h=outHost(); if(!h) return; const L=outTplCur().lang||'lt';
+    h.specL=h.specL||{}; h.specL[L]=e.target.value; if(L==='lt') h.spec=e.target.value; h.upd=Date.now();
+    clearTimeout(window._tpSpecT); window._tpSpecT=setTimeout(()=>{ persist();
+      const r=outQueue()[outIdx]; const ta=$('#out-txt'); if(r&&ta){ const mobs=mobileOptions(r), mw=mobs.find(t=>t.d===outWho(r))||mobs[0];
+        ta.value=fillTpl(r,outTplCur().text||'',mw&&mw.lab.includes(' · ')?mw.lab.split(' · ')[0]:'',outSpec(r)); outUpdateLinks(); } },350);
+  }
 });
 $('#outpanel').addEventListener('change',e=>{
   if(e.target.id==='out-to'){ outUpdateLinks(); persist(); }
@@ -3319,6 +3448,7 @@ $('#outpanel').addEventListener('change',e=>{
 });
 $('#outpanel').addEventListener('click',e=>{
   if(e.target.id==='outpanel'){ $('#outpanel').hidden=true; return; }
+  if(e.target.closest('.out-tpl') && outTplClick(e)) return;
   const t=e.target.closest('[data-ot]'); if(t){ outTab=t.dataset.ot; outIdx=0; renderOut(); return; }
   const oc=e.target.closest('[data-oc]'); if(oc){ e.preventDefault(); $('#outpanel').hidden=true; openCard(oc.dataset.oc); return; }
   const rs=e.target.closest('[data-reset]');
@@ -3399,8 +3529,8 @@ $('#aibar').addEventListener('click',e=>{
 
 
 /* ================= langų valdymas ir grįžimas į pradžią ================= */
-const POPUPS=['outpanel','panel','reqpanel','calpanel','logpanel','histpanel','partnerspanel','ptformpanel','gallerypanel','todaypanel','duppanel','needspanel'];
-const BTN_POPUP={'btn-today':'todaypanel','btn-needs':'needspanel','btn-dups':'duppanel','btn-changes':'panel','btn-req':'reqpanel','btn-cal':'calpanel','btn-log':'logpanel',
+const POPUPS=['outpanel','panel','reqpanel','calpanel','logpanel','histpanel','partnerspanel','ptformpanel','gallerypanel','todaypanel','duppanel','needspanel','intropanel'];
+const BTN_POPUP={'btn-today':'todaypanel','btn-needs':'needspanel','btn-intro':'intropanel','btn-dups':'duppanel','btn-changes':'panel','btn-req':'reqpanel','btn-cal':'calpanel','btn-log':'logpanel',
   'btn-hist':'histpanel','btn-partners':'partnerspanel','btn-gallery':'gallerypanel'};
 function closePopups(except){ POPUPS.forEach(id=>{ if(id!==except){ const el=document.getElementById(id); if(el) el.hidden=true; } }); }
 function anyPopupOpen(){ return POPUPS.some(id=>{ const el=document.getElementById(id); return el && !el.hidden; }); }
@@ -3667,7 +3797,7 @@ function refreshPartnersBadge(){
 function timelineOf(cid){
   const ev=[];
   DATA.notes.forEach(o=>{ if(o.cid===cid) ev.push({at:o.at||0, k:'n', txt:o.note||'', remind:o.remind||'', done:!!o.done, st:o.status||''}); });
-  DATA.contacts.forEach(o=>{ if(o.cid===cid){ const q=reqById(o.req);
+  DATA.contacts.forEach(o=>{ if(o.cid===cid && !o.camp){ const q=reqById(o.req);
     ev.push({at:o.at||0, k:'c', txt:['Kreiptasi', CH_LT[o.ch]&&o.ch!=='-'?CH_LT[o.ch]:'', o.kam||''].filter(Boolean).join(' · '), req:q?q.title:''}); } });
   return ev.sort((a,b)=>b.at-a.at);
 }
@@ -4211,6 +4341,8 @@ function ctcView(r){
     const contactedSel=selReq && DATA.contacts.some(o=>o.req===selReq.id&&o.cid===r[0]);
     // ---- KREIPIMASIS (užklausa nebūtina) ----
     h+=`<div class="sec"><h3>Kreipimasis
+      ${noCt(r[0])?'<span class="tag" style="background:#D0472F;color:#fff">nekontaktuoti</span>':''}
+      <button class="sigb" data-noct="${esc(r[0])}" style="margin-left:auto">${noCt(r[0])?'↺ vėl galima kontaktuoti':'🚫 Nekontaktuoti'}</button>
       ${contactedSel?'<span class="tag" style="background:var(--green);color:#fff">dėl šios užklausos jau kreiptasi</span>'
         :(lastC?`<span class="tag">paskutinis kontaktas ${new Date(lastC.at).toISOString().slice(0,10)}</span>`:'')}</h3>
       <div class="pick">
@@ -4745,6 +4877,9 @@ $('#d-ctc').addEventListener('click',e=>{
     if(confirm('Pašalinti išsaugotą AI raktą ir įvesti naują?')){ localStorage.removeItem(AI_KEY_STORE); aiKeyToCloud(null); renderCtc(); }
     return; }
   // ---- katalogai
+  const nc=e.target.closest('[data-noct]');
+  if(nc){ const id=nc.dataset.noct; DATA.nocontact=DATA.nocontact||{}; if(DATA.nocontact[id]) delete DATA.nocontact[id]; else DATA.nocontact[id]=true;
+    persist(); renderCtc(); toast(DATA.nocontact[id]?'Pažymėta: nekontaktuoti – nepateks į kreipimosi ir prisistatymo sąrašus':'Vėl galima kontaktuoti'); return; }
   if(e.target.closest('#vc-new')){ vcEdit='new'; renderCtc(); setTimeout(()=>{ const x=$('#vc-make'); if(x) x.focus(); },30); return; }
   const vco=e.target.closest('[data-vcopen]'); if(vco){ vcOpen=vco.dataset.vcopen; renderCtc(); return; }
   if(e.target.closest('[data-vcback]')){ e.preventDefault(); vcOpen=null; renderCtc(); return; }
@@ -5109,7 +5244,8 @@ function mergeImport(o){
       if(inc.photos){ DATA.photos=DATA.photos||[];
         const hp=new Set(DATA.photos.map(x=>x.id));
         inc.photos.forEach(x=>{ if(!hp.has(x.id)) DATA.photos.push(x); });
-        ['vcat','vfiles'].forEach(k=>{ DATA[k]=DATA[k]||[]; const hs=new Set(DATA[k].map(x=>x.id)); (inc[k]||[]).forEach(x=>{ if(!hs.has(x.id)) DATA[k].push(x); }); });
+        if(inc.nocontact) DATA.nocontact=Object.assign(DATA.nocontact||{},inc.nocontact);
+        ['vcat','vfiles','msgtpl','campaigns'].forEach(k=>{ DATA[k]=DATA[k]||[]; const hs=new Set(DATA[k].map(x=>x.id)); (inc[k]||[]).forEach(x=>{ if(!hs.has(x.id)) DATA[k].push(x); }); });
         refreshGalleryBadge(); }
 
       persist(); ROWS.forEach(reindex); refreshSav(); apply(); refreshPanel(); renderReqList();
@@ -5623,6 +5759,153 @@ $('#needspanel').addEventListener('click',e=>{
   const st=e.target.closest('[data-ndstale]');
   if(st){ const o=sigObj(st.dataset.ndstale); if(o){ o.stale=!o.stale; o.upd=Date.now(); persist(); renderNeeds(); } return; }
   const op=e.target.closest('[data-ndopen]'); if(op){ $('#needspanel').hidden=true; openCard(op.dataset.ndopen); }
+});
+
+
+/* ================= PRISISTATYMAS: kreipimasis į partnerius ir įmones (tik tekstas) ================= */
+let ipTab='build', ipCampId=null, ipIdx=0, ipLastCh='';
+const IB={src:'partners', groups:new Set(['potencialus','partneris','ex']), country:'', months:0, mobile:true, excl:new Set()};
+const ipCamp=()=>(DATA.campaigns||[]).find(c=>c.id===ipCampId)||null;
+function ipActive(){ const c=(DATA.campaigns||[]).filter(c=>c.kind==='intro').sort((a,b)=>b.created-a.created); return c.find(x=>ipLeft(x).length)||c[0]||null; }
+function ipLeft(c){ return (c.recips||[]).filter(cid=>!(c.sent||{})[cid] && !(c.skip||{})[cid] && !noCt(cid) && byId[cid]); }
+function ipCandidates(){
+  let list;
+  if(IB.src==='partners') list=(DATA.manual||[]).filter(m=>IB.groups.has(m.group||'potencialus') && (!IB.country || (m.country||'').trim()===IB.country)).map(m=>byId[m.id]).filter(Boolean);
+  else list=rows.filter(r=>!r._manual);
+  const lim=IB.months?Date.now()-IB.months*30.4*864e5:0;
+  return list.filter(r=>{
+    if(noCt(r[0])) return false;
+    if(IB.mobile && !mobileOptions(r).length) return false;
+    if(lim){ const t=lastTouch(r[0]); if(t && t.at>lim) return false; }
+    return true;
+  });
+}
+function renderIntro(){
+  const c=ipCamp();
+  $('#ip-n-q').textContent=c?ipLeft(c).length:0;
+  $('#ip-n-h').textContent=(DATA.campaigns||[]).filter(x=>x.kind==='intro').length;
+  $('#ip-sub').textContent=c?('· '+c.title):'';
+  document.querySelectorAll('#intropanel [data-it]').forEach(b=>b.classList.toggle('on',b.dataset.it===ipTab));
+  const B=$('#ip-body');
+  if(ipTab==='build'){
+    const cand=ipCandidates(), sel=cand.filter(r=>!IB.excl.has(r[0]));
+    const countries=[...new Set((DATA.manual||[]).map(m=>(m.country||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'lt'));
+    B.innerHTML=`<div class="ipb">
+      <div class="iprow"><b>Kam siųsti</b>
+        <label><input type="radio" name="ip-src" value="partners"${IB.src==='partners'?' checked':''}> Partneriai</label>
+        <label><input type="radio" name="ip-src" value="rows"${IB.src==='rows'?' checked':''}> Įmonės iš dabartinio sąrašo (${nf.format(rows.filter(r=>!r._manual).length)})</label></div>
+      ${IB.src==='partners'?`<div class="iprow"><span>Grupės</span>${[['potencialus','Potencialūs'],['partneris','Partneriai'],['ex','Ex klientai']].map(([k,l])=>
+          `<label><input type="checkbox" data-ipg="${k}"${IB.groups.has(k)?' checked':''}> ${l}</label>`).join('')}
+        <select id="ip-country"><option value="">Visos šalys</option>${countries.map(x=>`<option${x===IB.country?' selected':''}>${esc(x)}</option>`).join('')}</select></div>`
+        :`<div class="iprow ipnote">Sąrašą susiaurink pagrindinėje lentelėje (paieška, filtrai, AI paieška) ir grįžk čia.</div>`}
+      <div class="iprow"><span>Nesikreipta ilgiau nei</span>
+        <select id="ip-months">${[[0,'nesvarbu'],[1,'1 mėn.'],[3,'3 mėn.'],[6,'6 mėn.'],[12,'12 mėn.']].map(([v,l])=>`<option value="${v}"${+IB.months===v?' selected':''}>${l}</option>`).join('')}</select>
+        <label><input type="checkbox" id="ip-mobile"${IB.mobile?' checked':''}> tik turintys mobilųjį (WhatsApp)</label></div>
+      <div class="iprow"><span>Pavadinimas</span><input id="ip-title" value="Prisistatymas ${todayStr()}" style="flex:1;max-width:320px">
+        <button class="btn amber" id="ip-make"${sel.length?'':' disabled'}>Sudaryti siuntimo eilę (${sel.length})</button></div>
+      <div class="ipcount">Atitinka <b>${cand.length}</b>, pažymėta <b>${sel.length}</b>. Nuimk varnelę, jei kuriam nesiųsti.</div>
+      <div class="iplist">${cand.slice(0,500).map(r=>{ const t=lastTouch(r[0]), m=r._manual;
+        return `<label class="ipit"><input type="checkbox" data-ipx="${esc(r[0])}"${IB.excl.has(r[0])?'':' checked'}>
+          <b>${esc(r[1])}</b><span>${esc(m?[m.country,m.asm1].filter(Boolean).join(' · '):(val(r,'sav')||''))}</span>
+          <span class="d">${t?'paskutinis kontaktas '+fmtD(t.at):'kontaktų nebuvo'}</span></label>`; }).join('')}
+        ${cand.length>500?`<div class="ipnote">Rodoma 500 iš ${cand.length}.</div>`:''}</div></div>`;
+    return;
+  }
+  if(ipTab==='hist'){
+    const L=(DATA.campaigns||[]).filter(x=>x.kind==='intro').sort((a,b)=>b.created-a.created);
+    B.innerHTML=L.length?L.map(c=>{ const n=(c.recips||[]).length, sn=Object.keys(c.sent||{}).length;
+      return `<div class="tditem"><div class="nm">${esc(c.title)}</div>
+        <div class="meta">${fmtD(c.created)} · gavėjų ${n} · išsiųsta ${sn} · liko ${ipLeft(c).length}</div>
+        <div class="tdacts"><button data-ipgo="${esc(c.id)}">▶ Tęsti</button><button data-ipdel="${esc(c.id)}" style="color:#B3402C">Ištrinti</button></div></div>`; }).join('')
+      :'<div class="tdempty">Siuntimų dar nebuvo.</div>';
+    return;
+  }
+  // siuntimo eilė
+  if(!c){ B.innerHTML='<div class="tdempty">Pirma skirtuke „1. Gavėjai“ sudaryk siuntimo eilę.</div>'; return; }
+  const q=ipLeft(c), total=(c.recips||[]).length, sent=Object.keys(c.sent||{}).length;
+  if(!q.length){ B.innerHTML=`<div class="out-msgwrap"><div><div class="out-hint">Visiems eilės gavėjams išsiųsta arba praleista. Išsiųsta: ${sent} iš ${total}.</div></div>${tplPanelHTML('intro',c,false)}</div>`; return; }
+  if(ipIdx>=q.length) ipIdx=0;
+  const r=byId[q[ipIdx]], mobs=mobileOptions(r), opts=mobs.length?mobs:directTelOptions(r);
+  const who=(c.who||{})[r[0]], mw=opts.find(t=>t.d===who)||opts[0];
+  const tpl=tplCur('intro',c), t=lastTouch(r[0]);
+  const txt=fillTpl(r,tpl.text||'',mw&&mw.lab.includes(' · ')?mw.lab.split(' · ')[0]:(r._manual?(r._manual.asm1||''):''),'');
+  B.innerHTML=`<div class="out-msgwrap"><div class="out-q">
+    <div class="out-prog">Gavėjas <b>${ipIdx+1}</b> iš <b>${q.length}</b> likusių · išsiųsta ${sent} iš ${total}</div>
+    <div class="out-card">
+      <div class="out-nm"><a href="#" data-ipopen="${esc(r[0])}">${esc(r[1])}</a>${r._manual?' <span class="ndg">'+esc(GROUP_LT[r._manual.group]||'')+'</span>':''}</div>
+      <div class="out-sub">${t?'Paskutinis kontaktas '+fmtD(t.at)+': '+esc(String(t.txt).slice(0,90)):'Anksčiau kontaktų nebuvo'}</div>
+      ${opts.length?`<label class="out-lab">Gavėjas
+        <select id="ip-to">${opts.map((o,i)=>`<option value="${i}"${mw&&o.d===mw.d?' selected':''}>${esc(o.lab)}</option>`).join('')}</select></label>
+      <label class="out-lab">Žinutė (gali pataisyti)<textarea id="ip-txt" rows="8">${esc(txt)}</textarea></label>
+      <div class="ch out-ch">
+        <a class="wa" id="ip-wa" href="#" target="_blank" rel="noopener" data-ipch="wa">WhatsApp</a>
+        <a class="vb" id="ip-vb" href="#" data-ipch="vb">Viber</a>
+        <a class="vb" id="ip-sms" href="#" data-ipch="sms" style="background:var(--ink-3)">SMS</a>
+        <span style="flex:1"></span>
+        <button class="btn ghost" data-ipskip="1">Praleisti</button>
+        <button class="btn ghost" data-ipnoct="${esc(r[0])}" title="Daugiau niekada nesiūlyti">🚫</button>
+        <button class="btn amber" data-ipsent="1">Išsiųsta → kita</button>
+      </div>`:`<div class="ai-err">Telefono numerio nėra.</div><div class="ch out-ch"><span style="flex:1"></span><button class="btn ghost" data-ipskip="1">Praleisti</button></div>`}
+    </div>
+    <div class="out-hint">Paspausk WhatsApp, Viber arba SMS, išsiųsk, tada „Išsiųsta → kita“ – kliento kortelėje įsirašys pastaba apie prisistatymą.</div>
+  </div>${tplPanelHTML('intro',c,false)}</div>`;
+  ipUpdateLinks();
+}
+function ipCur(){ const c=ipCamp(); if(!c) return null; const q=ipLeft(c); return q.length?byId[q[Math.min(ipIdx,q.length-1)]]:null; }
+function ipUpdateLinks(){
+  const r=ipCur(); if(!r||!$('#ip-wa')) return;
+  const mobs=mobileOptions(r), opts=mobs.length?mobs:directTelOptions(r), t=opts[+($('#ip-to')||{}).value||0]; if(!t) return;
+  const c=ipCamp(); c.who=c.who||{}; c.who[r[0]]=t.d;
+  const txt=encodeURIComponent($('#ip-txt').value);
+  $('#ip-wa').href='https://wa.me/'+t.d+'?text='+txt;
+  $('#ip-vb').href='viber://chat?number=%2B'+t.d+'&text='+txt;
+  $('#ip-sms').href='sms:+'+t.d+'?body='+txt;
+}
+function ipLogSent(){
+  const c=ipCamp(), r=ipCur(); if(!c||!r) return;
+  const mobs=mobileOptions(r), opts=mobs.length?mobs:directTelOptions(r), t=opts[+($('#ip-to')||{}).value||0];
+  const tpl=tplCur('intro',c), ch=ipLastCh||'wa', now=Date.now();
+  c.sent=c.sent||{}; c.sent[r[0]]=now; c.upd=now;
+  const note='✉ '+(tpl.name||'Prisistatymas')+' – išsiųsta per '+(CH_LT[ch]||ch)+(t?' ('+t.lab+')':'')+'\n'+($('#ip-txt').value||'').trim();
+  DATA.notes.push({id:uid(), cid:r[0], at:now, status:'', note, remind:'', done:false, camp:c.id, upd:now, sig:{h:hashS(note),at:now,items:[]}});
+  DATA.contacts.push({id:uid(), req:'', cid:r[0], ch, at:now, kam:t?t.lab:'', camp:c.id, upd:now});
+  ipLastCh=''; persist(); refreshLogBadge(); renderIntro(); toast('Pažymėta: išsiųsta');
+}
+$('#btn-intro').addEventListener('click',()=>{ const p=$('#intropanel'); if(!p.hidden){ p.hidden=true; return; }
+  p.hidden=false; const a=ipActive(); ipCampId=a?a.id:null; ipTab=a&&ipLeft(a).length?'queue':'build'; ipIdx=0; IB.excl.clear(); renderIntro(); });
+$('#ip-close').addEventListener('click',()=>{ $('#intropanel').hidden=true; });
+$('#intropanel').addEventListener('change',e=>{
+  const t=e.target;
+  if(t.name==='ip-src'){ IB.src=t.value; IB.excl.clear(); renderIntro(); return; }
+  if(t.dataset&&t.dataset.ipg){ if(t.checked) IB.groups.add(t.dataset.ipg); else IB.groups.delete(t.dataset.ipg); renderIntro(); return; }
+  if(t.id==='ip-country'){ IB.country=t.value; renderIntro(); return; }
+  if(t.id==='ip-months'){ IB.months=+t.value; renderIntro(); return; }
+  if(t.id==='ip-mobile'){ IB.mobile=t.checked; renderIntro(); return; }
+  if(t.dataset&&t.dataset.ipx){ if(t.checked) IB.excl.delete(t.dataset.ipx); else IB.excl.add(t.dataset.ipx);
+    const n=ipCandidates().filter(r=>!IB.excl.has(r[0])).length; const b=$('#ip-make'); if(b){ b.textContent='Sudaryti siuntimo eilę ('+n+')'; b.disabled=!n; } return; }
+  if(t.id==='ip-to'){ ipUpdateLinks(); persist(); }
+});
+$('#intropanel').addEventListener('input',e=>{ if(e.target.id==='ip-txt') ipUpdateLinks(); });
+$('#intropanel').addEventListener('click',e=>{
+  if(e.target.id==='intropanel'){ $('#intropanel').hidden=true; return; }
+  const c=ipCamp();
+  if(e.target.closest('.out-tpl')){ if(c) tplPanelClick(e,'intro',c,renderIntro); return; }
+  const tb=e.target.closest('[data-it]'); if(tb){ ipTab=tb.dataset.it; ipIdx=0; renderIntro(); return; }
+  if(e.target.closest('#ip-make')){
+    const sel=ipCandidates().filter(r=>!IB.excl.has(r[0])).map(r=>r[0]); if(!sel.length) return;
+    const prev=ipActive();
+    const camp={id:'cp'+Date.now().toString(36), kind:'intro', created:Date.now(), upd:Date.now(), title:($('#ip-title').value||'Prisistatymas').trim(),
+      recips:sel, sent:{}, skip:{}, who:{}, tplId:prev?prev.tplId:''};
+    DATA.campaigns.push(camp); ipCampId=camp.id; ipTab='queue'; ipIdx=0; persist(); renderIntro(); toast('Eilė sudaryta: '+sel.length); return; }
+  const go=e.target.closest('[data-ipgo]'); if(go){ ipCampId=go.dataset.ipgo; ipTab='queue'; ipIdx=0; renderIntro(); return; }
+  const dl=e.target.closest('[data-ipdel]'); if(dl){ if(!confirm('Ištrinti šį siuntimą? Pastabos kortelėse liks.')) return;
+    DATA.campaigns=DATA.campaigns.filter(x=>x.id!==dl.dataset.ipdel); if(ipCampId===dl.dataset.ipdel) ipCampId=null; persist(); renderIntro(); return; }
+  const op=e.target.closest('[data-ipopen]'); if(op){ e.preventDefault(); $('#intropanel').hidden=true; openCard(op.dataset.ipopen); return; }
+  const chl=e.target.closest('[data-ipch]'); if(chl){ ipLastCh=chl.dataset.ipch; return; }
+  if(e.target.closest('[data-ipsent]')){ ipLogSent(); return; }
+  if(e.target.closest('[data-ipskip]')){ const r=ipCur(); if(c&&r){ c.skip=c.skip||{}; c.skip[r[0]]=Date.now(); c.upd=Date.now(); persist(); renderIntro(); } return; }
+  const nc=e.target.closest('[data-ipnoct]'); if(nc){ if(!confirm('Pažymėti „nekontaktuoti“? Daugiau nebus siūloma jokiuose sąrašuose.')) return;
+    DATA.nocontact=DATA.nocontact||{}; DATA.nocontact[nc.dataset.ipnoct]=true; persist(); renderIntro(); toast('Pažymėta: nekontaktuoti'); return; }
 });
 
 /* ================= debesis: sąsaja ================= */
