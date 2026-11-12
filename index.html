@@ -5809,7 +5809,9 @@ $('#needspanel').addEventListener('click',e=>{
 
 /* ================= PRISISTATYMAS: kreipimasis į partnerius ir įmones (tik tekstas) ================= */
 let ipTab='build', ipCampId=null, ipIdx=0, ipLastCh='';
-const IB={src:'partners', groups:new Set(['potencialus','partneris','ex']), country:'', months:0, mobile:true, excl:new Set()};
+const IB={src:'partners', groups:new Set(['potencialus','partneris','ex']), country:'', months:0, mobile:true, excl:new Set(), incl:new Set(), off:false, q:''};
+function ipSel(id){ return IB.off?IB.incl.has(id):!IB.excl.has(id); }
+function ipSelReset(){ IB.excl.clear(); IB.incl.clear(); IB.off=false; }
 const ipCamp=()=>(DATA.campaigns||[]).find(c=>c.id===ipCampId)||null;
 function ipActive(){ const c=(DATA.campaigns||[]).filter(c=>c.kind==='intro').sort((a,b)=>b.created-a.created); return c.find(x=>ipLeft(x).length)||c[0]||null; }
 function ipLeft(c){ return (c.recips||[]).filter(cid=>!(c.sent||{})[cid] && !(c.skip||{})[cid] && !noCt(cid) && byId[cid]); }
@@ -5833,7 +5835,7 @@ function renderIntro(){
   document.querySelectorAll('#intropanel [data-it]').forEach(b=>b.classList.toggle('on',b.dataset.it===ipTab));
   const B=$('#ip-body');
   if(ipTab==='build'){
-    const cand=ipCandidates(), sel=cand.filter(r=>!IB.excl.has(r[0]));
+    const cand=ipCandidates(), sel=cand.filter(r=>ipSel(r[0])), qq=IB.q.trim().toLowerCase(), shown=qq?cand.filter(r=>(r[1]+' '+(r._manual?[r._manual.country,r._manual.asm1].join(' '):'')).toLowerCase().includes(qq)):cand;
     const countries=[...new Set((DATA.manual||[]).map(m=>(m.country||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'lt'));
     B.innerHTML=`<div class="ipb">
       <div class="iprow"><b>Kam siųsti</b>
@@ -5848,12 +5850,16 @@ function renderIntro(){
         <label><input type="checkbox" id="ip-mobile"${IB.mobile?' checked':''}> tik turintys mobilųjį (WhatsApp)</label></div>
       <div class="iprow"><span>Pavadinimas</span><input id="ip-title" value="Prisistatymas ${todayStr()}" style="flex:1;max-width:320px">
         <button class="btn amber" id="ip-make"${sel.length?'':' disabled'}>Sudaryti siuntimo eilę (${sel.length})</button></div>
-      <div class="ipcount">Atitinka <b>${cand.length}</b>, pažymėta <b>${sel.length}</b>. Nuimk varnelę, jei kuriam nesiųsti.</div>
-      <div class="iplist">${cand.slice(0,500).map(r=>{ const t=lastTouch(r[0]), m=r._manual;
-        return `<label class="ipit"><input type="checkbox" data-ipx="${esc(r[0])}"${IB.excl.has(r[0])?'':' checked'}>
+      <div class="ipcount" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span>Atitinka <b>${cand.length}</b>, pažymėta <b id="ip-seln">${sel.length}</b>.</span>
+        <button class="btn ghost" data-ipall="1" style="height:26px">☑ Pažymėti visus</button>
+        <button class="btn ghost" data-ipnone="1" style="height:26px">☐ Nuimti visus</button>
+        <input id="ip-q" placeholder="Ieškoti sąraše…" value="${esc(IB.q)}" style="height:26px;flex:1;min-width:140px;max-width:260px">
+        ${qq?`<button class="btn ghost" data-ipshown="1" style="height:26px">Pažymėti rastus (${shown.length})</button>`:''}</div>
+      <div class="iplist">${shown.slice(0,500).map(r=>{ const t=lastTouch(r[0]), m=r._manual;
+        return `<label class="ipit"><input type="checkbox" data-ipx="${esc(r[0])}"${ipSel(r[0])?' checked':''}>
           <b>${esc(r[1])}</b><span>${esc(m?[m.country,m.asm1].filter(Boolean).join(' · '):(val(r,'sav')||''))}</span>
           <span class="d">${t?'paskutinis kontaktas '+fmtD(t.at):'kontaktų nebuvo'}</span></label>`; }).join('')}
-        ${cand.length>500?`<div class="ipnote">Rodoma 500 iš ${cand.length}.</div>`:''}</div></div>`;
+        ${shown.length>500?`<div class="ipnote">Rodoma 500 iš ${shown.length}. Susiaurink paieška.</div>`:''}</div></div>`;
     return;
   }
   if(ipTab==='hist'){
@@ -5917,27 +5923,36 @@ function ipLogSent(){
   ipLastCh=''; persist(); refreshLogBadge(); renderIntro(); toast('Pažymėta: išsiųsta');
 }
 $('#btn-intro').addEventListener('click',()=>{ const p=$('#intropanel'); if(!p.hidden){ p.hidden=true; return; }
-  p.hidden=false; const a=ipActive(); ipCampId=a?a.id:null; ipTab=a&&ipLeft(a).length?'queue':'build'; ipIdx=0; IB.excl.clear(); renderIntro(); });
+  p.hidden=false; const a=ipActive(); ipCampId=a?a.id:null; ipTab=a&&ipLeft(a).length?'queue':'build'; ipIdx=0; ipSelReset(); IB.q=''; renderIntro(); });
 $('#ip-close').addEventListener('click',()=>{ $('#intropanel').hidden=true; });
 $('#intropanel').addEventListener('change',e=>{
   const t=e.target;
-  if(t.name==='ip-src'){ IB.src=t.value; IB.excl.clear(); renderIntro(); return; }
+  if(t.name==='ip-src'){ IB.src=t.value; ipSelReset(); renderIntro(); return; }
   if(t.dataset&&t.dataset.ipg){ if(t.checked) IB.groups.add(t.dataset.ipg); else IB.groups.delete(t.dataset.ipg); renderIntro(); return; }
   if(t.id==='ip-country'){ IB.country=t.value; renderIntro(); return; }
   if(t.id==='ip-months'){ IB.months=+t.value; renderIntro(); return; }
   if(t.id==='ip-mobile'){ IB.mobile=t.checked; renderIntro(); return; }
-  if(t.dataset&&t.dataset.ipx){ if(t.checked) IB.excl.delete(t.dataset.ipx); else IB.excl.add(t.dataset.ipx);
-    const n=ipCandidates().filter(r=>!IB.excl.has(r[0])).length; const b=$('#ip-make'); if(b){ b.textContent='Sudaryti siuntimo eilę ('+n+')'; b.disabled=!n; } return; }
+  if(t.dataset&&t.dataset.ipx){ const id=t.dataset.ipx;
+    if(IB.off){ if(t.checked) IB.incl.add(id); else IB.incl.delete(id); } else { if(t.checked) IB.excl.delete(id); else IB.excl.add(id); }
+    ipCountUpd(); return; }
   if(t.id==='ip-to'){ ipUpdateLinks(); persist(); }
 });
-$('#intropanel').addEventListener('input',e=>{ if(e.target.id==='ip-txt') ipUpdateLinks(); });
+function ipCountUpd(){ const n=ipCandidates().filter(r=>ipSel(r[0])).length; const b=$('#ip-make'); if(b){ b.textContent='Sudaryti siuntimo eilę ('+n+')'; b.disabled=!n; } const s=$('#ip-seln'); if(s) s.textContent=n; }
+let ipQT=null;
+$('#intropanel').addEventListener('input',e=>{ if(e.target.id==='ip-txt') ipUpdateLinks();
+  if(e.target.id==='ip-q'){ IB.q=e.target.value; clearTimeout(ipQT); ipQT=setTimeout(()=>{ renderIntro(); const q=$('#ip-q'); if(q){ q.focus(); q.setSelectionRange(q.value.length,q.value.length); } },250); } });
 $('#intropanel').addEventListener('click',e=>{
   if(e.target.id==='intropanel'){ $('#intropanel').hidden=true; return; }
   const c=ipCamp();
   if(e.target.closest('.out-tpl')){ if(c) tplPanelClick(e,'intro',c,renderIntro); return; }
   const tb=e.target.closest('[data-it]'); if(tb){ ipTab=tb.dataset.it; ipIdx=0; renderIntro(); return; }
+  if(e.target.closest('[data-ipall]')){ ipSelReset(); renderIntro(); return; }
+  if(e.target.closest('[data-ipnone]')){ IB.excl.clear(); IB.incl.clear(); IB.off=true; renderIntro(); return; }
+  if(e.target.closest('[data-ipshown]')){ const qq=IB.q.trim().toLowerCase();
+    ipCandidates().filter(r=>(r[1]+' '+(r._manual?[r._manual.country,r._manual.asm1].join(' '):'')).toLowerCase().includes(qq))
+      .forEach(r=>{ if(IB.off) IB.incl.add(r[0]); else IB.excl.delete(r[0]); }); renderIntro(); return; }
   if(e.target.closest('#ip-make')){
-    const sel=ipCandidates().filter(r=>!IB.excl.has(r[0])).map(r=>r[0]); if(!sel.length) return;
+    const sel=ipCandidates().filter(r=>ipSel(r[0])).map(r=>r[0]); if(!sel.length) return;
     const prev=ipActive();
     const camp={id:'cp'+Date.now().toString(36), kind:'intro', created:Date.now(), upd:Date.now(), title:($('#ip-title').value||'Prisistatymas').trim(),
       recips:sel, sent:{}, skip:{}, who:{}, tplId:prev?prev.tplId:''};
